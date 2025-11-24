@@ -60,21 +60,21 @@ export default function MoodCalendar({ moods }: MoodCalendarProps) {
     <div className="w-full h-full flex flex-col">
       {/* Header */}
       <div className="flex justify-between items-center mb-2 px-2 shrink-0">
-        <button onClick={handlePrevMonth} className="p-2 hover:bg-white rounded-full text-pink-500 transition-colors shadow-sm">
-            <ChevronLeft size={20} />
+        <button onClick={handlePrevMonth} className="p-2 hover:bg-gradient-to-r hover:from-pink-100 hover:to-purple-100 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent transition-all shadow-sm">
+            <ChevronLeft size={20} className="text-pink-500" />
         </button>
-        <h2 className="text-lg font-bold text-gray-800">
+        <h2 className="text-lg font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
           {format(currentMonth, 'yyyy年 M月', { locale: zhCN })}
         </h2>
-        <button onClick={handleNextMonth} className="p-2 hover:bg-white rounded-full text-pink-500 transition-colors shadow-sm">
-            <ChevronRight size={20} />
+        <button onClick={handleNextMonth} className="p-2 hover:bg-gradient-to-r hover:from-pink-100 hover:to-purple-100 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent transition-all shadow-sm">
+            <ChevronRight size={20} className="text-pink-500" />
         </button>
       </div>
 
       {/* Days of Week */}
       <div className="grid grid-cols-7 gap-1 mb-1 px-2 shrink-0">
         {['日', '一', '二', '三', '四', '五', '六'].map(day => (
-          <div key={day} className="text-center text-xs font-bold text-gray-400">
+          <div key={day} className="text-center text-xs font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
             {day}
           </div>
         ))}
@@ -99,10 +99,10 @@ export default function MoodCalendar({ moods }: MoodCalendarProps) {
                   disabled={!mood}
                   className={`w-full h-full rounded-xl flex items-center justify-center text-lg transition-all duration-300
                     ${mood 
-                        ? 'bg-white hover:bg-pink-50 hover:scale-105 cursor-pointer shadow-sm border border-pink-100' 
+                        ? 'bg-gradient-to-br from-white to-pink-50/30 hover:from-pink-50 hover:to-purple-50 hover:scale-105 cursor-pointer shadow-md border border-pink-200/50' 
                         : 'text-gray-300 cursor-default'
                     }
-                    ${!mood && isToday ? 'bg-white/50 font-bold text-pink-500 ring-1 ring-pink-300 ring-inset shadow-inner' : ''}
+                    ${!mood && isToday ? 'bg-gradient-to-br from-pink-50 to-purple-50 font-bold text-pink-500 ring-2 ring-pink-300 ring-inset shadow-inner' : ''}
                   `}
                 >
                   {mood ? (
@@ -112,7 +112,7 @@ export default function MoodCalendar({ moods }: MoodCalendarProps) {
                   )}
                 </button>
                 {mood && mood.intensity >= 2 && (
-                    <span className="absolute bottom-1 right-1 w-2 h-2 bg-pink-500 rounded-full border border-white" />
+                    <span className="absolute bottom-1 right-1 w-2 h-2 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full border border-white shadow-sm" />
                 )}
             </div>
           );
@@ -126,20 +126,20 @@ export default function MoodCalendar({ moods }: MoodCalendarProps) {
             onClick={() => setSelectedMood(null)}
         >
             <div 
-                className="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-6 transform transition-all scale-100 animate-scale-in border-4 border-pink-100" 
+                className="bg-gradient-to-br from-white via-pink-50/30 to-purple-50/30 w-full max-w-xs rounded-3xl shadow-2xl p-6 transform transition-all scale-100 animate-scale-in border-4 border-white/80 ring-1 ring-pink-200/50" 
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex justify-between items-start mb-6">
                     <div>
-                        <p className="text-xs text-gray-400 font-medium mb-1">{format(new Date(selectedMood.created_at), 'yyyy年M月d日 HH:mm', { locale: zhCN })}</p>
-                        <h3 className="text-3xl font-bold text-gray-800 mt-1 flex items-center gap-3">
+                        <p className="text-xs bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent font-medium mb-1">{format(new Date(selectedMood.created_at), 'yyyy年M月d日 HH:mm', { locale: zhCN })}</p>
+                        <h3 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mt-1 flex items-center gap-3">
                             <span className="text-4xl">{getMoodEmoji(selectedMood.mood)}</span>
                             {getMoodLabel(selectedMood.mood)}
                         </h3>
                     </div>
                     <button 
                         onClick={() => setSelectedMood(null)} 
-                        className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+                        className="bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 p-2 rounded-full text-pink-500 hover:text-pink-600 transition-colors"
                     >
                         <X size={20} />
                     </button>
@@ -147,14 +147,14 @@ export default function MoodCalendar({ moods }: MoodCalendarProps) {
                 
                 <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs font-bold uppercase tracking-wider text-gray-400">情绪强度</span>
+                        <span className="text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">情绪强度</span>
                     </div>
                     <div className="flex gap-2">
                         {[0, 1, 2, 3].map((level) => (
                             <div 
                                 key={level} 
                                 className={`flex-1 h-2 rounded-full transition-colors ${
-                                    level <= selectedMood.intensity ? 'bg-pink-500' : 'bg-gray-100'
+                                    level <= selectedMood.intensity ? 'bg-gradient-to-r from-pink-400 to-purple-400' : 'bg-gray-100'
                                 }`} 
                             />
                         ))}
@@ -162,12 +162,12 @@ export default function MoodCalendar({ moods }: MoodCalendarProps) {
                 </div>
 
                 {selectedMood.note ? (
-                    <div className="bg-pink-50 p-4 rounded-2xl relative">
-                        <div className="absolute -top-2 left-4 w-4 h-4 bg-pink-50 rotate-45" />
+                    <div className="bg-gradient-to-br from-pink-50 to-purple-50 p-4 rounded-2xl relative border border-pink-200/30">
+                        <div className="absolute -top-2 left-4 w-4 h-4 bg-gradient-to-br from-pink-50 to-purple-50 rotate-45 border-l border-t border-pink-200/30" />
                         <p className="text-gray-700 text-sm leading-relaxed font-medium">"{selectedMood.note}"</p>
                     </div>
                 ) : (
-                    <p className="text-gray-400 text-sm italic text-center">没有写下笔记哦 ~</p>
+                    <p className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent text-sm italic text-center">没有写下笔记哦 ~</p>
                 )}
             </div>
         </div>

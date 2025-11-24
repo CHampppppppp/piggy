@@ -30,7 +30,7 @@ export default function MoodForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <form action={handleSubmit} className="space-y-6 w-full mx-auto">
       <div>
-        <label className="block text-lg font-bold text-gray-800 mb-4 text-center">今天心情怎么样呀？Piggy~</label>
+        <label className="block text-lg font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-4 text-center">今天心情怎么样呀？Piggy~</label>
         <div className="grid grid-cols-3 gap-3">
           {MOODS.map((m) => (
             <button
@@ -39,12 +39,12 @@ export default function MoodForm({ onSuccess }: { onSuccess?: () => void }) {
               onClick={() => setSelectedMood(m.value)}
               className={`flex flex-col items-center p-3 rounded-2xl border-2 transition-all duration-200 ${
                 selectedMood === m.value
-                  ? 'bg-pink-50 border-pink-500 scale-105 shadow-md'
-                  : 'bg-gray-50 border-transparent hover:bg-pink-50 hover:border-pink-200'
+                  ? 'bg-gradient-to-br from-pink-50 to-purple-50 border-pink-400 scale-105 shadow-lg'
+                  : 'bg-gradient-to-br from-gray-50 to-white border-transparent hover:from-pink-50 hover:to-purple-50 hover:border-pink-200'
               }`}
             >
               <span className="text-4xl mb-2 filter drop-shadow-sm">{m.emoji}</span>
-              <span className={`text-sm font-medium ${selectedMood === m.value ? 'text-pink-600' : 'text-gray-500'}`}>
+              <span className={`text-sm font-medium ${selectedMood === m.value ? 'bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent' : 'text-gray-500'}`}>
                 {m.label}
               </span>
             </button>
@@ -56,10 +56,10 @@ export default function MoodForm({ onSuccess }: { onSuccess?: () => void }) {
       {selectedMood && (
         <div className="animate-fade-in space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-3 ml-1">
+            <label className="block text-sm font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-3 ml-1">
                 强烈程度
             </label>
-            <div className="flex justify-between bg-gray-50 p-2 rounded-2xl">
+            <div className="flex justify-between bg-gradient-to-br from-pink-50/50 to-purple-50/50 p-2 rounded-2xl border border-pink-200/30">
                 {[0, 1, 2, 3].map((level) => (
                 <button
                     key={level}
@@ -67,7 +67,7 @@ export default function MoodForm({ onSuccess }: { onSuccess?: () => void }) {
                     onClick={() => setIntensity(level)}
                     className={`flex-1 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 ${
                     intensity === level
-                        ? 'bg-white text-pink-500 shadow-sm ring-2 ring-pink-100'
+                        ? 'bg-gradient-to-r from-pink-100 to-purple-100 text-pink-600 shadow-md ring-2 ring-pink-200/50'
                         : 'text-gray-400 hover:text-gray-600'
                     }`}
                 >
@@ -79,13 +79,13 @@ export default function MoodForm({ onSuccess }: { onSuccess?: () => void }) {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">
+            <label className="block text-sm font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2 ml-1">
               想说点什么吗？
             </label>
             <textarea
               name="note"
               rows={3}
-              className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-pink-300 outline-none transition-all resize-none text-gray-700 placeholder-gray-400"
+              className="w-full p-4 bg-gradient-to-br from-pink-50/30 to-purple-50/30 border-2 border-pink-200/30 rounded-2xl focus:bg-white focus:border-pink-400 outline-none transition-all resize-none text-gray-700 placeholder-gray-400"
               placeholder="记录一下今天发生的小事..."
             />
           </div>
@@ -95,7 +95,7 @@ export default function MoodForm({ onSuccess }: { onSuccess?: () => void }) {
       <button
         type="submit"
         disabled={!selectedMood || isSubmitting}
-        className="w-full py-4 px-4 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-bold text-lg rounded-2xl shadow-lg shadow-pink-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        className="w-full py-4 px-4 bg-gradient-to-r from-pink-400 via-pink-500 to-purple-500 text-white font-bold text-lg rounded-2xl shadow-lg shadow-pink-300/50 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
       >
         {isSubmitting ? '记录中...' : '确认记录 ❤️'}
       </button>

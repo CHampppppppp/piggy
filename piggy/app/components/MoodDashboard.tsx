@@ -1,24 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Calendar as CalendarIcon, List as ListIcon } from 'lucide-react';
+import { Heart, Calendar as CalendarIcon, List as ListIcon } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import MoodCalendar from './MoodCalendar';
 import MoodHistory from './MoodHistory';
 import MoodForm from './MoodForm';
 import { Mood } from '@/lib/actions';
+
+// 动态导入欢迎语组件，因为它只在首次加载时需要
+const DailyGreeting = dynamic(() => import('./DailyGreeting'), {
+  ssr: false,
+});
 
 export default function MoodDashboard({ moods }: { moods: Mood[] }) {
   const [view, setView] = useState<'calendar' | 'history'>('calendar');
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   return (
-    <div className="h-screen w-full bg-gray-50 sm:bg-pink-100 sm:flex sm:items-center sm:justify-center overflow-hidden">
-      <div className="w-full h-full sm:w-[420px] sm:h-[850px] sm:max-h-[95vh] bg-pink-50 flex flex-col overflow-hidden relative sm:rounded-[30px] sm:shadow-2xl sm:border-[8px] sm:border-white sm:ring-1 sm:ring-gray-900/5">
+    <div className="h-screen w-full bg-gradient-to-br from-pink-200 via-purple-200 to-pink-300 sm:flex sm:items-center sm:justify-center overflow-hidden">
+      <div className="w-full h-full sm:w-[420px] sm:h-[850px] sm:max-h-[95vh] bg-gradient-to-br from-pink-50 via-white to-purple-50 flex flex-col overflow-hidden relative sm:rounded-[30px] sm:shadow-2xl sm:border-[8px] sm:border-white/80 sm:ring-1 sm:ring-pink-200/50">
         {/* Header */}
-        <header className="flex-none pt-8 pb-2 px-6 text-center bg-gradient-to-b from-pink-50 to-transparent z-10">
-          <h1 className="text-xl font-bold text-gray-800 tracking-tight">Piggy's Mood Diary 🐷</h1>
-          <p className="text-xs text-pink-400 mt-1 font-medium">记录老婆每一天～</p>
+        <header className="flex-none pt-8 pb-2 px-6 text-center bg-gradient-to-b from-white/80 via-pink-50/50 to-transparent z-10">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent tracking-tight">Piggy's Mood Diary 🐷</h1>
+          <p className="text-xs bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mt-1 font-medium">记录每一个闪闪发光的日子 ✨</p>
         </header>
 
         {/* Main Content */}
@@ -58,18 +64,18 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsAddOpen(true)}
-            className="pointer-events-auto w-16 h-16 bg-gradient-to-br from-pink-400 to-pink-600 rounded-full shadow-xl shadow-pink-500/40 flex items-center justify-center text-white border-4 border-pink-50"
+            className="pointer-events-auto w-16 h-16 bg-gradient-to-br from-pink-400 via-pink-500 to-purple-500 rounded-full shadow-xl shadow-pink-400/50 flex items-center justify-center text-white border-4 border-white/90"
           >
             <Plus size={32} strokeWidth={3} />
           </motion.button>
 
           {/* Switch Tabs */}
-          <div className="pointer-events-auto bg-white/90 backdrop-blur-xl shadow-lg rounded-full p-1.5 flex gap-2 border border-pink-100">
+          <div className="pointer-events-auto bg-white/95 backdrop-blur-xl shadow-lg rounded-full p-1.5 flex gap-2 border border-pink-200/50">
             <button
               onClick={() => setView('calendar')}
               className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${view === 'calendar'
-                  ? 'bg-pink-100 text-pink-600 font-semibold shadow-sm'
-                  : 'text-gray-400 hover:text-gray-600'
+                ? 'bg-gradient-to-r from-pink-100 to-purple-100 text-pink-600 font-semibold shadow-sm'
+                : 'text-gray-400 hover:text-gray-600'
                 }`}
             >
               <CalendarIcon size={18} />
@@ -78,8 +84,8 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
             <button
               onClick={() => setView('history')}
               className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${view === 'history'
-                  ? 'bg-pink-100 text-pink-600 font-semibold shadow-sm'
-                  : 'text-gray-400 hover:text-gray-600'
+                ? 'bg-gradient-to-r from-pink-100 to-purple-100 text-pink-600 font-semibold shadow-sm'
+                : 'text-gray-400 hover:text-gray-600'
                 }`}
             >
               <ListIcon size={18} />
