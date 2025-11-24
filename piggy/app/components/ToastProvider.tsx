@@ -32,6 +32,7 @@ export const useToast = () => useContext(ToastContext);
 export default function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const [canRenderPortal, setCanRenderPortal] = useState(false);
 
   useEffect(() => {
     const timersMap = timers.current;
@@ -61,8 +62,11 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
     [removeToast]
   );
 
+  useEffect(() => {
+    setCanRenderPortal(true);
+  }, []);
+
   const contextValue = useMemo(() => ({ showToast }), [showToast]);
-  const canRenderPortal = typeof document !== 'undefined';
 
   return (
     <ToastContext.Provider value={contextValue}>
