@@ -2,12 +2,13 @@
 
 import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Calendar as CalendarIcon, List as ListIcon } from 'lucide-react';
+import { Heart, Calendar as CalendarIcon, List as ListIcon, type LucideIcon } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import MoodCalendar from './MoodCalendar';
 import MoodHistory from './MoodHistory';
 import MoodForm from './MoodForm';
 import { Mood } from '@/lib/actions';
+import LogoutButton from './LogoutButton';
 
 // 动态导入欢迎语组件，因为它只在首次加载时需要
 const DailyGreeting = dynamic(() => import('./DailyGreeting'), {
@@ -23,7 +24,7 @@ const TabButton = memo(({
 }: {
   isActive: boolean;
   onClick: () => void;
-  icon: any;
+  icon: LucideIcon;
   label: string;
 }) => (
   <button
@@ -50,8 +51,11 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
       <div className="h-screen w-full bg-gradient-to-br from-pink-200 via-purple-200 to-pink-300 sm:flex sm:items-center sm:justify-center overflow-hidden">
         <div className="w-full h-full sm:w-[420px] sm:h-[850px] sm:max-h-[95vh] bg-gradient-to-br from-pink-50 via-white to-purple-50 flex flex-col overflow-hidden relative sm:rounded-[30px] sm:shadow-2xl sm:border-[8px] sm:border-white/80 sm:ring-1 sm:ring-pink-200/50">
           {/* Header */}
-          <header className="flex-none pt-8 pb-2 px-6 text-center bg-gradient-to-b from-white/80 via-pink-50/50 to-transparent z-10">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent tracking-tight">Piggy's Mood Diary 🐷</h1>
+          <header className="relative flex-none pt-8 pb-2 px-6 text-center bg-gradient-to-b from-white/80 via-pink-50/50 to-transparent z-10">
+            <div className="absolute right-6 top-6">
+              <LogoutButton />
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent tracking-tight">Piggy&apos;s Mood Diary 🐷</h1>
             <p className="text-xs bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mt-1 font-medium">记录老婆的每一天 ✨</p>
           </header>
 
