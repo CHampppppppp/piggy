@@ -148,10 +148,10 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
                   transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                  className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 max-h-[85vh] overflow-y-auto shadow-2xl"
+                  className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto shadow-2xl"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6 sm:hidden opacity-50" />
+                  <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4 sm:hidden opacity-50" />
                   <div className="flex justify-between items-center mb-4 sm:hidden">
                     <h3 className="text-lg font-bold text-gray-800">记录心情</h3>
                     <button onClick={() => setIsAddOpen(false)} className="text-gray-400 p-2">
