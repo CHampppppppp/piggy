@@ -14,7 +14,7 @@ const MOOD_EMOJIS: Record<string, string> = {
 
 // 优化的单个心情卡片组件
 const MoodCard = memo(({ mood }: { mood: Mood }) => (
-  <div className="bg-gradient-to-br from-white via-pink-50/20 to-purple-50/20 p-4 rounded-2xl shadow-md border border-pink-200/50 flex gap-4 items-center transform transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]">
+  <div className="cursor-pointer bg-gradient-to-br from-white via-pink-50/20 to-purple-50/20 p-4 rounded-2xl shadow-md border border-pink-200/50 flex gap-4 items-center transform transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]">
     <div className="text-4xl flex items-center justify-center bg-gradient-to-br from-pink-100 to-purple-100 w-14 h-14 rounded-2xl shrink-0 shadow-sm">
       {MOOD_EMOJIS[mood.mood] || '😐'}
     </div>

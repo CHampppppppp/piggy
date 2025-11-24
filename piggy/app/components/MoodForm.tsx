@@ -25,7 +25,7 @@ const MoodButton = memo(({
   <button
     type="button"
     onClick={onClick}
-    className={`flex flex-col items-center p-2 rounded-2xl border-2 transition-all duration-200 ${
+    className={`cursor-pointer flex flex-col items-center p-2 rounded-2xl border-2 transition-all duration-200 ${
       isSelected
         ? 'bg-gradient-to-br from-pink-50 to-purple-50 border-pink-400 scale-105 shadow-lg'
         : 'bg-gradient-to-br from-gray-50 to-white border-transparent hover:from-pink-50 hover:to-purple-50 hover:border-pink-200'
@@ -55,7 +55,7 @@ const IntensityButton = memo(({
   <button
     type="button"
     onClick={onClick}
-    className={`flex-1 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 ${
+    className={`cursor-pointer flex-1 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-200 ${
       isSelected
         ? 'bg-gradient-to-r from-pink-100 to-purple-100 text-pink-600 shadow-md ring-2 ring-pink-200/50'
         : 'text-gray-400 hover:text-gray-600'
@@ -139,7 +139,7 @@ function MoodForm({ onSuccess }: { onSuccess?: () => void }) {
       <button
         type="submit"
         disabled={!selectedMood || isSubmitting}
-        className="w-full py-3 px-4 bg-gradient-to-r from-pink-400 via-pink-500 to-purple-500 text-white font-bold text-base rounded-2xl shadow-lg shadow-pink-300/50 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        className="cursor-pointer w-full py-3 px-4 bg-gradient-to-r from-pink-400 via-pink-500 to-purple-500 text-white font-bold text-base rounded-2xl shadow-lg shadow-pink-300/50 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
       >
         {isSubmitting ? '记录中...' : '确认记录 ❤️'}
       </button>

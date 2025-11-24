@@ -39,10 +39,10 @@ export default function DailyGreeting() {
     // 否则生成新的问候语
     const randomIndex = Math.floor(Math.random() * GREETINGS.length);
     const greeting = GREETINGS[randomIndex];
-    
+
     localStorage.setItem('piggy_greeting_date', today);
     localStorage.setItem('piggy_greeting_text', greeting);
-    
+
     return greeting;
   }, []);
 
@@ -91,7 +91,7 @@ export default function DailyGreeting() {
           >
             <button
               onClick={handleClose}
-              className="absolute top-4 right-4 p-2 bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 rounded-full text-pink-500 hover:text-pink-600 transition-all"
+              className="cursor-pointer absolute top-4 right-4 p-2 bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 rounded-full text-pink-500 hover:text-pink-600 transition-all"
               aria-label="关闭"
             >
               <X size={18} />
@@ -130,7 +130,7 @@ export default function DailyGreeting() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
                 onClick={handleClose}
-                className="px-6 py-2.5 bg-gradient-to-r from-pink-400 via-pink-500 to-purple-500 text-white font-semibold rounded-full shadow-lg shadow-pink-300/50 hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+                className="cursor-pointer px-6 py-2.5 bg-gradient-to-r from-pink-400 via-pink-500 to-purple-500 text-white font-semibold rounded-full shadow-lg shadow-pink-300/50 hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
               >
                 开始记录今天的心情
               </motion.button>

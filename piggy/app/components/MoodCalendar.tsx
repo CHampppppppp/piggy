@@ -117,13 +117,13 @@ function MoodCalendar({ moods }: MoodCalendarProps) {
     <div className="w-full h-full flex flex-col">
       {/* Header */}
       <div className="flex justify-between items-center mb-2 px-2 shrink-0">
-        <button onClick={handlePrevMonth} className="p-2 hover:bg-gradient-to-r hover:from-pink-100 hover:to-purple-100 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent transition-all shadow-sm">
+        <button onClick={handlePrevMonth} className="cursor-pointer p-2 hover:bg-gradient-to-r hover:from-pink-100 hover:to-purple-100 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent transition-all shadow-sm">
           <ChevronLeft size={20} className="text-pink-500" />
         </button>
         <h2 className="text-lg font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
           {format(currentMonth, 'yyyy年 M月', { locale: zhCN })}
         </h2>
-        <button onClick={handleNextMonth} className="p-2 hover:bg-gradient-to-r hover:from-pink-100 hover:to-purple-100 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent transition-all shadow-sm">
+        <button onClick={handleNextMonth} className="cursor-pointer p-2 hover:bg-gradient-to-r hover:from-pink-100 hover:to-purple-100 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent transition-all shadow-sm">
           <ChevronRight size={20} className="text-pink-500" />
         </button>
       </div>
@@ -184,7 +184,7 @@ function MoodCalendar({ moods }: MoodCalendarProps) {
               </div>
               <button
                 onClick={() => setSelectedMood(null)}
-                className="bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 p-2 rounded-full text-pink-500 hover:text-pink-600 transition-colors"
+                className="cursor-pointer bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 p-2 rounded-full text-pink-500 hover:text-pink-600 transition-colors"
               >
                 <X size={20} />
               </button>

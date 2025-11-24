@@ -28,7 +28,7 @@ const TabButton = memo(({
 }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${isActive
+    className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${isActive
       ? 'bg-gradient-to-r from-pink-100 to-purple-100 text-pink-600 font-semibold shadow-sm'
       : 'text-gray-400 hover:text-gray-600'
       }`}
@@ -92,7 +92,7 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsAddOpen(true)}
-              className="pointer-events-auto relative w-16 h-16 flex items-center justify-center"
+              className="cursor-pointer pointer-events-auto relative w-16 h-16 flex items-center justify-center"
               aria-label="添加心情记录"
             >
               {/* 白色外层爱心 */}
@@ -154,7 +154,7 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
                   <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4 sm:hidden opacity-50" />
                   <div className="flex justify-between items-center mb-4 sm:hidden">
                     <h3 className="text-lg font-bold text-gray-800">记录心情</h3>
-                    <button onClick={() => setIsAddOpen(false)} className="text-gray-400 p-2">
+                    <button onClick={() => setIsAddOpen(false)} className="cursor-pointer text-gray-400 p-2">
                       关闭
                     </button>
                   </div>
