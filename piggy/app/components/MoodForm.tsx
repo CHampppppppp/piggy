@@ -23,7 +23,7 @@ const MoodButton = memo(({
   isSelected,
   onClick
 }: {
-  mood: typeof MOODS[0];
+  mood: (typeof MOODS)[number];
   isSelected: boolean;
   onClick: () => void;
 }) => (
