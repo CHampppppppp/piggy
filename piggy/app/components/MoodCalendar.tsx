@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useCallback } from 'react';
 import {
   format,
   startOfMonth,
@@ -9,28 +9,35 @@ import {
   isSameDay,
   addMonths,
   subMonths,
-  getDay
+  getDay,
+  addDays,
+  isWithinInterval,
+  differenceInCalendarDays
 } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { Mood } from '@/lib/actions';
+import { ChevronLeft, ChevronRight, X, Edit2 } from 'lucide-react';
+import { Mood, Period } from '@/lib/actions';
 import { MOODS } from './MoodForm';
 
 // Define prop type
 interface MoodCalendarProps {
   moods: Mood[];
+  periods: Period[];
+  onEditMood?: (mood: Mood) => void;
 }
 
 // 优化的日期格子组件
 const DayCell = memo(({
   day,
   mood,
+  isPeriod,
   isToday,
   onMoodClick,
   getMoodEmoji
 }: {
   day: Date;
   mood: Mood | null;
+  isPeriod: boolean;
   isToday: boolean;
   onMoodClick: (mood: Mood) => void;
   getMoodEmoji: (moodValue: string) => string;
@@ -45,6 +52,7 @@ const DayCell = memo(({
           : 'text-gray-300 cursor-default'
         }
         ${!mood && isToday ? 'bg-gradient-to-br from-pink-50 to-purple-50 font-bold text-pink-500 ring-2 ring-pink-300 ring-inset shadow-inner' : ''}
+        ${isPeriod ? 'ring-2 ring-rose-300 bg-rose-50/50' : ''}
       `}
     >
       {mood ? (
@@ -52,9 +60,12 @@ const DayCell = memo(({
           {getMoodEmoji(mood.mood)}
         </span>
       ) : (
-        <span className="text-sm">{format(day, 'd')}</span>
+        <span className={`text-sm ${isPeriod ? 'text-rose-400 font-medium' : ''}`}>{format(day, 'd')}</span>
       )}
     </button>
+    {isPeriod && (
+      <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-400 rounded-full" />
+    )}
     {mood && mood.intensity >= 2 && (
       <span className="absolute bottom-1 right-1 w-2 h-2 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full border border-white shadow-sm" />
     )}
@@ -63,7 +74,7 @@ const DayCell = memo(({
 
 DayCell.displayName = 'DayCell';
 
-function MoodCalendar({ moods }: MoodCalendarProps) {
+function MoodCalendar({ moods, periods, onEditMood }: MoodCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
 
@@ -96,6 +107,18 @@ function MoodCalendar({ moods }: MoodCalendarProps) {
       return moodMap.get(dateKey) || null;
     };
   }, [moods]);
+
+  // Check if a day is within a period
+  const isPeriodDay = useCallback((day: Date) => {
+    return periods.some(period => {
+      const startDate = new Date(period.start_date);
+      // Normalize to start of day to avoid time issues
+      const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+      const end = addDays(start, 6); // 6 days after start = 7 days total
+
+      return isWithinInterval(day, { start, end });
+    });
+  }, [periods]);
 
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -135,7 +158,7 @@ function MoodCalendar({ moods }: MoodCalendarProps) {
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1.5 px-2 flex-1 overflow-y-auto content-start">
+      <div className="grid grid-cols-7 gap-1.5 p-2 flex-1 overflow-y-auto content-start">
         {/* Empty slots for previous month */}
         {emptyDays.map((_, i) => (
           <div key={`empty-${i}`} />
@@ -144,6 +167,7 @@ function MoodCalendar({ moods }: MoodCalendarProps) {
         {/* Days */}
         {daysInMonth.map((day) => {
           const mood = getMoodForDay(day);
+          const isPeriod = isPeriodDay(day);
           const isToday = isSameDay(day, new Date());
 
           return (
@@ -151,6 +175,7 @@ function MoodCalendar({ moods }: MoodCalendarProps) {
               key={day.toString()}
               day={day}
               mood={mood}
+              isPeriod={isPeriod}
               isToday={isToday}
               onMoodClick={setSelectedMood}
               getMoodEmoji={getMoodEmoji}
@@ -179,12 +204,25 @@ function MoodCalendar({ moods }: MoodCalendarProps) {
                   </h3>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedMood(null)}
-                className="cursor-pointer bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 p-2 rounded-full text-pink-500 hover:text-pink-600 transition-colors"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                {onEditMood && differenceInCalendarDays(new Date(), new Date(selectedMood.created_at)) <= 3 && (
+                  <button
+                    onClick={() => {
+                      onEditMood(selectedMood);
+                      setSelectedMood(null);
+                    }}
+                    className="cursor-pointer bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 p-2 rounded-full text-pink-500 hover:text-pink-600 transition-colors"
+                  >
+                    <Edit2 size={20} />
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedMood(null)}
+                  className="cursor-pointer bg-gradient-to-br from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 p-2 rounded-full text-pink-500 hover:text-pink-600 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="mb-6">
@@ -192,7 +230,7 @@ function MoodCalendar({ moods }: MoodCalendarProps) {
                 <span className="text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">情绪强度</span>
               </div>
               <div className="flex gap-2">
-                {[0, 1, 2, 3].map((level) => (
+                {[1, 2, 3].map((level) => (
                   <div
                     key={level}
                     className={`flex-1 h-2 rounded-full transition-colors ${level <= selectedMood.intensity ? 'bg-gradient-to-r from-pink-400 to-purple-400' : 'bg-gray-100'
@@ -218,4 +256,3 @@ function MoodCalendar({ moods }: MoodCalendarProps) {
 }
 
 export default memo(MoodCalendar);
-

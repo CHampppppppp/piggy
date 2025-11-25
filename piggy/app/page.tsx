@@ -1,4 +1,4 @@
-import { getMoods } from '@/lib/actions';
+import { getMoods, getPeriods } from '@/lib/actions';
 import { hasValidSession } from '@/lib/auth';
 import MoodDashboard from './components/MoodDashboard';
 import LoginScreen from './components/LoginScreen';
@@ -12,7 +12,7 @@ export default async function Home() {
     return <LoginScreen />;
   }
 
-  const moods = await getMoods();
+  const [moods, periods] = await Promise.all([getMoods(), getPeriods()]);
 
-  return <MoodDashboard moods={moods} />;
+  return <MoodDashboard moods={moods} periods={periods} />;
 }

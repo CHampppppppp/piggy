@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import MoodCalendar from './MoodCalendar';
 import MoodHistory from './MoodHistory';
 import MoodForm from './MoodForm';
-import { Mood } from '@/lib/actions';
+import { Mood, Period } from '@/lib/actions';
 import LogoutButton from './LogoutButton';
 
 // 动态导入欢迎语组件，因为它只在首次加载时需要
@@ -41,9 +41,25 @@ const TabButton = memo(({
 
 TabButton.displayName = 'TabButton';
 
-export default function MoodDashboard({ moods }: { moods: Mood[] }) {
+export default function MoodDashboard({ moods, periods }: { moods: Mood[], periods: Period[] }) {
   const [view, setView] = useState<'calendar' | 'history'>('calendar');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingMood, setEditingMood] = useState<Mood | null>(null);
+
+  const handleEditMood = (mood: Mood) => {
+    setEditingMood(mood);
+    setIsAddOpen(true);
+  };
+
+  const handleCloseAdd = () => {
+    setIsAddOpen(false);
+    setTimeout(() => setEditingMood(null), 300);
+  };
+
+  const handleOpenAdd = () => {
+    setEditingMood(null);
+    setIsAddOpen(true);
+  };
 
   return (
     <>
@@ -71,7 +87,7 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   className="h-full"
                 >
-                  <MoodCalendar moods={moods} />
+                  <MoodCalendar moods={moods} periods={periods} onEditMood={handleEditMood} />
                 </motion.div>
               ) : (
                 <motion.div
@@ -95,7 +111,7 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setIsAddOpen(true)}
+              onClick={handleOpenAdd}
               className="cursor-pointer pointer-events-auto relative w-16 h-16 flex items-center justify-center"
               aria-label="添加心情记录"
             >
@@ -145,7 +161,7 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className="absolute inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
-                onClick={() => setIsAddOpen(false)}
+                onClick={handleCloseAdd}
               >
                 <motion.div
                   initial={{ y: "100%" }}
@@ -157,12 +173,12 @@ export default function MoodDashboard({ moods }: { moods: Mood[] }) {
                 >
                   <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4 sm:hidden opacity-50" />
                   <div className="flex justify-between items-center mb-4 sm:hidden">
-                    <h3 className="text-lg font-bold text-gray-800">记录心情</h3>
-                    <button onClick={() => setIsAddOpen(false)} className="cursor-pointer text-gray-400 p-2">
+                    <h3 className="text-lg font-bold text-gray-800">{editingMood ? '修改心情' : '记录心情'}</h3>
+                    <button onClick={handleCloseAdd} className="cursor-pointer text-gray-400 p-2">
                       关闭
                     </button>
                   </div>
-                  <MoodForm onSuccess={() => setIsAddOpen(false)} />
+                  <MoodForm onSuccess={handleCloseAdd} initialData={editingMood} />
                 </motion.div>
               </motion.div>
             )}
