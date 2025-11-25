@@ -12,7 +12,7 @@ const ATTEMPT_COOKIE = 'piggy-auth-attempts';
 const SECURITY_ATTEMPT_COOKIE = 'piggy-security-attempts';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 const MAX_ATTEMPTS_BEFORE_LOCK = 6;
-const MAX_SECURITY_ATTEMPTS_BEFORE_LOCK = 3; // 密保只允许3次错误
+const MAX_SECURITY_ATTEMPTS_BEFORE_LOCK = 1; // 密保只允许1次错误
 const BASE_LOCK_MINUTES = 15;
 const LOCK_ESCALATION_MINUTES = 30;
 
@@ -76,6 +76,30 @@ async function clearPasswordLock() {
     );
   } catch (error) {
     console.error('Failed to clear password lock:', error);
+  }
+}
+
+// 获取所有类型锁定的累计次数（用于计算累加锁定时长）
+// 两种锁定类型的错误次数会累加影响锁定时长
+async function getTotalLockEscalation(): Promise<number> {
+  try {
+    // 统计所有 duration > 0 的锁定记录数量（不论类型）
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) as total FROM account_locks WHERE duration_minutes > 0`
+    );
+    return parseInt(rows[0]?.total || '0', 10);
+  } catch (error) {
+    console.error('Failed to get total lock escalation:', error);
+    return 0;
+  }
+}
+
+// 登录成功后清除所有错误记录（重置锁定累加）
+async function clearAllLockRecords() {
+  try {
+    await pool.query(`DELETE FROM account_locks`);
+  } catch (error) {
+    console.error('Failed to clear lock records:', error);
   }
 }
 
@@ -157,9 +181,12 @@ function formatLockRemainingMessage(lockedUntil: number) {
   return `当前账号被保护啦，${remainingMinutes}分钟后再试试~`;
 }
 
-function applyLock(state: AttemptState) {
-  const minutes = lockDurationMinutes(state.lockEscalation);
-  state.lockEscalation += 1;
+// 应用密码锁定（使用数据库累计的escalation值来计算锁定时长）
+async function applyLock(state: AttemptState) {
+  // 从数据库获取累计锁定次数（密码+密保的总次数）
+  const totalEscalation = await getTotalLockEscalation();
+  const minutes = lockDurationMinutes(totalEscalation);
+  state.lockEscalation = totalEscalation + 1; // 保存新的escalation值
   state.lockedUntil = Date.now() + minutes * 60 * 1000;
   state.count = 0;
   state.messageIndex = FAILURE_MESSAGES.length - 1;
@@ -263,7 +290,7 @@ export async function authenticate(
     );
 
     if (attemptState.count > MAX_ATTEMPTS_BEFORE_LOCK) {
-      const minutes = applyLock(attemptState);
+      const minutes = await applyLock(attemptState);
       await setAccountLock(minutes, 'Password retry limit exceeded', 'password');
 
       cookieStore.set({
@@ -296,7 +323,13 @@ export async function authenticate(
     return { error: message };
   }
 
+  // 登录成功！清除所有cookie和数据库中的错误记录
   cookieStore.delete(ATTEMPT_COOKIE);
+  cookieStore.delete(SECURITY_ATTEMPT_COOKIE);
+  
+  // 清除数据库中的所有锁定记录（重置错误时长累加）
+  await clearAllLockRecords();
+  
   cookieStore.set({
     name: AUTH_COOKIE,
     value: computeToken(expected),
@@ -341,10 +374,12 @@ function serializeSecurityAttemptState(state: SecurityAttemptState) {
   return JSON.stringify(state);
 }
 
-// 应用密保锁定
-function applySecurityLock(state: SecurityAttemptState) {
-  const minutes = lockDurationMinutes(state.lockEscalation);
-  state.lockEscalation += 1;
+// 应用密保锁定（使用数据库累计的escalation值来计算锁定时长）
+async function applySecurityLock(state: SecurityAttemptState) {
+  // 从数据库获取累计锁定次数（密码+密保的总次数）
+  const totalEscalation = await getTotalLockEscalation();
+  const minutes = lockDurationMinutes(totalEscalation);
+  state.lockEscalation = totalEscalation + 1; // 保存新的escalation值
   state.lockedUntil = Date.now() + minutes * 60 * 1000;
   state.count = 0;
   return minutes;
@@ -400,9 +435,9 @@ export async function recoverPassword(
 
     securityAttemptState.count += 1;
 
-    // 密保错误次数超限，锁定密保功能
+    // 密保错误次数超限，锁定密保功能（1次错误即锁定）
     if (securityAttemptState.count >= MAX_SECURITY_ATTEMPTS_BEFORE_LOCK) {
-      const minutes = applySecurityLock(securityAttemptState);
+      const minutes = await applySecurityLock(securityAttemptState);
       await setAccountLock(minutes, 'Security question failed', 'security');
       
       cookieStore.set({

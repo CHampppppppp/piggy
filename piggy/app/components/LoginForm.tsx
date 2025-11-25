@@ -5,7 +5,6 @@ import { useFormStatus } from 'react-dom';
 import { authenticate, type AuthState, getAccountLockStatus } from '@/lib/auth';
 import { useToast } from './ToastProvider';
 import { useSafeActionState } from '@/app/hooks/useSafeActionState';
-import { CatSticker } from './KawaiiStickers';
 
 const initialState: AuthState = {};
 
@@ -14,12 +13,48 @@ export default function LoginForm() {
   const { showToast } = useToast();
   const [dbLocked, setDbLocked] = useState(false);
   const [lockMessage, setLockMessage] = useState('');
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (state?.error) {
+      showToast(state.error, 'error');
+    }
+    if (state?.lockedUntil) {
+      setLockedUntil(state.lockedUntil);
+    }
+  }, [showToast, state]);
 
   useEffect(() => {
     const checkLock = async () => {
-
       const status = await getAccountLockStatus();
       if (status.isLocked && status.lockedUntil) {
+        setLockedUntil(status.lockedUntil);
+      } else {
+        setLockedUntil(null);
+      }
+    };
+
+    // 初始检查
+    checkLock();
+
+    // 定期检查（每5秒）
+    const interval = setInterval(checkLock, 5000);
+
+    // 监听密保解锁成功事件，立即重新检查锁定状态
+    // 这样密码锁定可以在通过密保验证后被解除
+    const handleSecurityUnlock = () => {
+      checkLock();
+    };
+    window.addEventListener('security-unlock-success', handleSecurityUnlock);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('security-unlock-success', handleSecurityUnlock);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!lockedUntil) {
       setDbLocked(false);
       setLockMessage('');
       return;
@@ -29,7 +64,7 @@ export default function LoginForm() {
       const remaining = lockedUntil - Date.now();
       if (remaining > 0) {
         setDbLocked(true);
-        const remainingMinutes = Math.ceil(remaining / 60000);
+        const minutes = Math.ceil(remaining / 60000);
         setLockMessage(`当前账号被保护啦，${minutes}分钟后再试试~`);
       } else {
         setDbLocked(false);
@@ -51,19 +86,16 @@ export default function LoginForm() {
       className="w-full space-y-4"
     >
       {locked && lockMessage && (
-        <div className="rounded-2xl bg-[#ffd6e7] border-3 border-black p-4 text-center text-sm text-black font-bold animate-wiggle">
-          <div className="flex items-center justify-center gap-2">
-            <CatSticker size={30} />
-            <span>{lockMessage}</span>
-          </div>
+        <div className="rounded-2xl bg-pink-50 p-4 text-center text-sm text-pink-600 animate-pulse">
+          {lockMessage}
         </div>
       )}
       <div className="space-y-2">
         <label
           htmlFor="password"
-          className="block text-sm font-bold text-black"
+          className="block text-sm font-medium text-gray-600"
         >
-          女朋友专属密码 ♡
+          女朋友专属密码
         </label>
         <input
           id="password"
@@ -71,8 +103,8 @@ export default function LoginForm() {
           type="password"
           required
           disabled={locked}
-          className="input-manga w-full rounded-2xl text-base placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-          placeholder="输入我们的小秘密..."
+          className="w-full rounded-2xl border border-pink-200 bg-white/80 px-4 py-3 text-base text-pink-900 placeholder-pink-300 focus:border-pink-400 focus:outline-none focus:ring-2 focus:ring-pink-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          placeholder="输入我们的小秘密"
           autoComplete="current-password"
         />
       </div>
@@ -90,23 +122,13 @@ function SubmitButton({ locked }: { locked: boolean }) {
     <button
       type="submit"
       disabled={disabled}
-      className={`w-full rounded-2xl px-4 py-3 font-bold text-lg transition-all ${
-        disabled
-          ? 'cursor-not-allowed bg-gray-200 text-gray-400 border-3 border-gray-300'
-          : 'btn-kawaii-pink kawaii-hover'
-      }`}
-      style={!disabled ? { border: '3px solid #1a1a1a' } : {}}
+      className={`w-full rounded-2xl px-4 py-3 font-semibold transition ${disabled
+        ? 'cursor-not-allowed bg-gray-200 text-gray-400 shadow-none'
+        : 'cursor-pointer bg-gradient-to-r from-pink-400 to-purple-400 text-white shadow-lg shadow-pink-200/70 hover:brightness-105'
+        }`}
     >
-      {pending ? (
-        <span className="flex items-center justify-center gap-2">
-          <span className="animate-spin">🐱</span>
-          打开日记中...
-        </span>
-      ) : locked ? (
-        '账号保护中 🔒'
-      ) : (
-        '进入日记 →'
-      )}
+      {pending ? '打开日记中...' : locked ? '账号保护中' : '进入日记'}
     </button>
   );
 }
+

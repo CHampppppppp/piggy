@@ -31,6 +31,9 @@ export default function ForgotPasswordModal() {
             showToast(state.error, 'error');
         } else if (state?.success) {
             showToast('闯关成功！快把密码抱回家 ♡', 'success');
+            // 密保验证成功，触发事件让LoginForm重新检查锁定状态
+            // 这样密码锁定可以被解除
+            window.dispatchEvent(new CustomEvent('security-unlock-success'));
         }
     }, [showToast, state?.error, state?.success]);
 
