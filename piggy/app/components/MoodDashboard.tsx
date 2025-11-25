@@ -10,7 +10,11 @@ import MoodHistory from './MoodHistory';
 import MoodForm from './MoodForm';
 import { Mood, Period } from '@/lib/actions';
 import LogoutButton from './LogoutButton';
-import { CatSticker, DogSticker, HeartSticker, PawSticker, SleepyCatSticker } from './KawaiiStickers';
+import { 
+  CatSticker, DogSticker, HeartSticker, PawSticker, SleepyCatSticker,
+  SnakeSticker, CapybaraSticker, PandaSticker, BunnySticker, BirdSticker,
+  BearSticker, DuckSticker, FrogSticker, CharacterAvatar, StarSticker
+} from './KawaiiStickers';
 
 // 动态导入欢迎语组件
 const DailyGreeting = dynamic(() => import('./DailyGreeting'), {
@@ -68,19 +72,82 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
     <>
       <DailyGreeting />
       <div className="h-screen w-full bg-white pattern-dots sm:flex sm:items-center sm:justify-center overflow-hidden relative">
-        {/* 背景装饰贴纸 */}
+        {/* 背景装饰贴纸 - 丰富的动物和人物 */}
         <div className="absolute inset-0 pointer-events-none hidden sm:block">
-          <div className="absolute top-10 left-10 animate-float">
-            <SleepyCatSticker size={100} />
+          {/* 左上区域 - 睡觉猫咪 */}
+          <div className="absolute top-8 left-8 animate-float">
+            <SleepyCatSticker size={90} />
           </div>
-          <div className="absolute bottom-20 right-10 animate-float" style={{ animationDelay: '0.7s' }}>
-            <DogSticker size={80} />
+          
+          {/* 右上区域 - 卡皮巴拉 */}
+          <div className="absolute top-12 right-12 animate-float" style={{ animationDelay: '0.5s' }}>
+            <CapybaraSticker size={85} />
           </div>
-          <div className="absolute top-1/3 right-20 animate-float" style={{ animationDelay: '1.2s' }}>
-            <HeartSticker size={50} />
+          
+          {/* 左侧中部 - 熊猫 */}
+          <div className="absolute top-1/3 left-6 animate-float" style={{ animationDelay: '1s' }}>
+            <PandaSticker size={70} />
           </div>
-          <div className="absolute bottom-1/3 left-20">
+          
+          {/* 右侧中部 - 小蛇 */}
+          <div className="absolute top-1/4 right-8 animate-float" style={{ animationDelay: '0.8s' }}>
+            <SnakeSticker size={65} />
+          </div>
+          
+          {/* 左下区域 - 小兔子 */}
+          <div className="absolute bottom-1/3 left-10 animate-float" style={{ animationDelay: '1.3s' }}>
+            <BunnySticker size={60} />
+          </div>
+          
+          {/* 右下区域 - 小狗 */}
+          <div className="absolute bottom-24 right-16 animate-float" style={{ animationDelay: '0.3s' }}>
+            <DogSticker size={75} />
+          </div>
+          
+          {/* 底部左侧 - 小鸟 */}
+          <div className="absolute bottom-16 left-20 animate-float" style={{ animationDelay: '1.6s' }}>
+            <BirdSticker size={55} />
+          </div>
+          
+          {/* 中下区域 - 青蛙 */}
+          <div className="absolute bottom-8 left-1/3 animate-float" style={{ animationDelay: '0.9s' }}>
+            <FrogSticker size={50} />
+          </div>
+          
+          {/* 右侧底部 - 小熊 */}
+          <div className="absolute bottom-1/4 right-6 animate-float" style={{ animationDelay: '1.1s' }}>
+            <BearSticker size={60} />
+          </div>
+          
+          {/* 散落的装饰 */}
+          <div className="absolute top-20 left-1/4">
+            <HeartSticker size={35} />
+          </div>
+          <div className="absolute top-1/2 right-1/4">
             <PawSticker size={40} />
+          </div>
+          <div className="absolute bottom-1/2 left-16">
+            <StarSticker size={30} />
+          </div>
+          
+          {/* 圆形人物头像装饰 */}
+          <div className="absolute top-16 left-1/3 pointer-events-auto">
+            <CharacterAvatar src="/luffy.jpg" alt="Luffy" size={55} />
+          </div>
+          <div className="absolute top-1/4 right-1/3 pointer-events-auto">
+            <CharacterAvatar src="/L.jpg" alt="L" size={50} />
+          </div>
+          <div className="absolute bottom-20 left-1/4 pointer-events-auto">
+            <CharacterAvatar src="/zoro.jpg" alt="Zoro" size={52} />
+          </div>
+          <div className="absolute bottom-1/3 right-1/4 pointer-events-auto">
+            <CharacterAvatar src="/akaza.jpg" alt="Akaza" size={48} />
+          </div>
+          <div className="absolute top-1/2 left-8 pointer-events-auto">
+            <CharacterAvatar src="/Kamado.jpg" alt="Kamado" size={50} />
+          </div>
+          <div className="absolute bottom-12 right-1/3 pointer-events-auto">
+            <CharacterAvatar src="/misa.jpg" alt="Misa" size={45} />
           </div>
         </div>
 

@@ -1,38 +1,99 @@
 import LoginForm from './LoginForm';
 import ForgotPasswordModal from './ForgotPasswordModal';
-import { CatSticker, DogSticker, HeartSticker, StarSticker, PawSticker } from './KawaiiStickers';
+import { 
+    CatSticker, DogSticker, HeartSticker, StarSticker, PawSticker,
+    SnakeSticker, CapybaraSticker, PandaSticker, BunnySticker, BirdSticker,
+    BearSticker, DuckSticker, FrogSticker, CharacterAvatar
+} from './KawaiiStickers';
 import Image from 'next/image';
 
 export default function LoginScreen() {
     return (
         <div className="min-h-screen w-full bg-white pattern-dots flex items-center justify-center px-4 py-10 relative overflow-hidden">
-            {/* 装饰性贴纸 - 绝对定位在背景 */}
+            {/* 装饰性贴纸 - 丰富的动物和人物 */}
             <div className="absolute inset-0 pointer-events-none">
-                {/* 左上角装饰 */}
-                <div className="absolute top-10 left-10 animate-float">
-                    <CatSticker size={80} />
+                {/* 左上角 - 可爱猫咪 */}
+                <div className="absolute top-8 left-8 animate-float">
+                    <CatSticker size={75} />
                 </div>
-                {/* 右上角装饰 */}
-                <div className="absolute top-20 right-16 animate-float" style={{ animationDelay: '0.5s' }}>
+                
+                {/* 右上角 - 卡皮巴拉 */}
+                <div className="absolute top-12 right-12 animate-float" style={{ animationDelay: '0.5s' }}>
+                    <CapybaraSticker size={80} />
+                </div>
+                
+                {/* 左侧中上 - 小蛇 */}
+                <div className="absolute top-1/4 left-6 animate-float" style={{ animationDelay: '0.8s' }}>
+                    <SnakeSticker size={60} />
+                </div>
+                
+                {/* 右侧中上 - 熊猫 */}
+                <div className="absolute top-1/3 right-8 animate-float" style={{ animationDelay: '1.2s' }}>
+                    <PandaSticker size={65} />
+                </div>
+                
+                {/* 左侧中下 - 小狗 */}
+                <div className="absolute bottom-1/3 left-10 animate-float" style={{ animationDelay: '1s' }}>
                     <DogSticker size={70} />
                 </div>
-                {/* 左下角装饰 */}
-                <div className="absolute bottom-20 left-16 animate-float" style={{ animationDelay: '1s' }}>
-                    <PawSticker size={50} />
+                
+                {/* 右侧中下 - 小兔子 */}
+                <div className="absolute bottom-1/4 right-6 animate-float" style={{ animationDelay: '0.3s' }}>
+                    <BunnySticker size={60} />
                 </div>
-                {/* 右下角装饰 */}
-                <div className="absolute bottom-32 right-10 animate-float" style={{ animationDelay: '0.3s' }}>
-                    <HeartSticker size={45} />
+                
+                {/* 左下角 - 小鸟 */}
+                <div className="absolute bottom-16 left-16 animate-float" style={{ animationDelay: '1.4s' }}>
+                    <BirdSticker size={50} />
                 </div>
-                {/* 散落的星星 */}
+                
+                {/* 右下角 - 小熊 */}
+                <div className="absolute bottom-20 right-16 animate-float" style={{ animationDelay: '0.7s' }}>
+                    <BearSticker size={55} />
+                </div>
+                
+                {/* 底部中间 - 小鸭子 */}
+                <div className="absolute bottom-8 left-1/3 animate-float" style={{ animationDelay: '1.6s' }}>
+                    <DuckSticker size={50} />
+                </div>
+                
+                {/* 顶部中间 - 青蛙 */}
+                <div className="absolute top-6 left-1/3 animate-float" style={{ animationDelay: '0.9s' }}>
+                    <FrogSticker size={45} />
+                </div>
+                
+                {/* 散落的小装饰 */}
                 <div className="absolute top-1/4 left-1/4">
-                    <StarSticker size={30} />
+                    <StarSticker size={28} />
                 </div>
-                <div className="absolute top-1/3 right-1/4">
+                <div className="absolute top-1/2 right-1/4">
+                    <HeartSticker size={35} />
+                </div>
+                <div className="absolute bottom-1/3 left-1/4">
+                    <PawSticker size={40} />
+                </div>
+                <div className="absolute top-2/3 right-1/3">
                     <StarSticker size={25} />
                 </div>
-                <div className="absolute bottom-1/4 left-1/3">
-                    <StarSticker size={28} />
+                
+                {/* 圆形人物头像装饰 - 带悬浮效果 */}
+                <div className="absolute top-20 left-1/4 pointer-events-auto">
+                    <CharacterAvatar src="/luffy.jpg" alt="Luffy" size={50} />
+                </div>
+                <div className="absolute top-1/3 right-1/4 pointer-events-auto">
+                    <CharacterAvatar src="/zoro.jpg" alt="Zoro" size={45} />
+                </div>
+                <div className="absolute bottom-1/4 left-1/5 pointer-events-auto">
+                    <CharacterAvatar src="/L.jpg" alt="L" size={48} />
+                </div>
+                <div className="absolute bottom-16 right-1/4 pointer-events-auto">
+                    <CharacterAvatar src="/akaza.jpg" alt="Akaza" size={52} />
+                </div>
+                <div className="absolute top-1/2 left-4 pointer-events-auto">
+                    <CharacterAvatar src="/Kamado.jpg" alt="Kamado" size={46} />
+                </div>
+                <div className="absolute bottom-1/2 right-4 pointer-events-auto">
+                    <CharacterAvatar src="/happiness.jpg" alt="Happiness" size={44} />
                 </div>
             </div>
 
