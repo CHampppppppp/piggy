@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import LoginForm from './LoginForm';
 import ForgotPasswordModal from './ForgotPasswordModal';
 import {
@@ -121,8 +121,15 @@ function randomSize(min: number, max: number): number {
 }
 
 export default function LoginScreen() {
-    // 使用 useMemo 确保每次组件挂载时生成随机位置，但不会在重渲染时改变
-    const randomDecorations = useMemo(() => {
+    // 使用 useState 和 useEffect 确保随机装饰只在客户端生成，避免 SSR 和客户端不一致
+    const [randomDecorations, setRandomDecorations] = useState<{
+        animals: Array<{ Component: any; size: number; position: { top: number; left: number; delay: number } }>;
+        decorations: Array<{ Component: any; size: number; position: { top: number; left: number; delay: number } }>;
+        avatars: Array<{ src: string; alt: string; size: number; position: { top: number; left: number; delay: number } }>;
+    } | null>(null);
+
+    useEffect(() => {
+        // 只在客户端生成随机装饰
         // 随机选择 6-8 个动物（最大尺寸约80px）
         const animalCount = Math.floor(Math.random() * 3) + 6;
         const selectedAnimals = shuffleAndPick(ANIMAL_STICKERS, animalCount);
@@ -137,7 +144,7 @@ export default function LoginScreen() {
         const selectedAvatars = shuffleAndPick(CHARACTER_AVATARS, avatarCount);
         const avatarPositions = generateRandomPositions(avatarCount, 90);
 
-        return {
+        setRandomDecorations({
             animals: selectedAnimals.map((animal, i) => ({
                 ...animal,
                 size: randomSize(animal.minSize, animal.maxSize),
@@ -156,57 +163,59 @@ export default function LoginScreen() {
                 size: randomSize(65, 85),
                 position: avatarPositions[i],
             })),
-        };
+        });
     }, []);
 
     return (
         <div className="min-h-screen w-full bg-white pattern-dots flex items-center justify-center px-4 py-10 relative overflow-hidden">
             {/* 随机装饰性贴纸 */}
-            <div className="absolute inset-0 pointer-events-none">
-                {/* 动物贴纸 */}
-                {randomDecorations.animals.map((animal, index) => (
-                    <div
-                        key={`animal-${index}`}
-                        className="absolute animate-float"
-                        style={{
-                            top: `${animal.position.top}%`,
-                            left: `${animal.position.left}%`,
-                            animationDelay: `${animal.position.delay}s`,
-                        }}
-                    >
-                        <animal.Component size={animal.size} />
-                    </div>
-                ))}
+            {randomDecorations && (
+                <div className="absolute inset-0 pointer-events-none">
+                    {/* 动物贴纸 */}
+                    {randomDecorations.animals.map((animal, index) => (
+                        <div
+                            key={`animal-${index}`}
+                            className="absolute animate-float"
+                            style={{
+                                top: `${animal.position.top}%`,
+                                left: `${animal.position.left}%`,
+                                animationDelay: `${animal.position.delay}s`,
+                            }}
+                        >
+                            <animal.Component size={animal.size} />
+                        </div>
+                    ))}
 
-                {/* 小装饰 */}
-                {randomDecorations.decorations.map((decor, index) => (
-                    <div
-                        key={`decor-${index}`}
-                        className="absolute"
-                        style={{
-                            top: `${decor.position.top}%`,
-                            left: `${decor.position.left}%`,
-                        }}
-                    >
-                        <decor.Component size={decor.size} />
-                    </div>
-                ))}
+                    {/* 小装饰 */}
+                    {randomDecorations.decorations.map((decor, index) => (
+                        <div
+                            key={`decor-${index}`}
+                            className="absolute"
+                            style={{
+                                top: `${decor.position.top}%`,
+                                left: `${decor.position.left}%`,
+                            }}
+                        >
+                            <decor.Component size={decor.size} />
+                        </div>
+                    ))}
 
-                {/* 角色头像 */}
-                {randomDecorations.avatars.map((avatar, index) => (
-                    <div
-                        key={`avatar-${index}`}
-                        className="absolute pointer-events-auto animate-float"
-                        style={{
-                            top: `${avatar.position.top}%`,
-                            left: `${avatar.position.left}%`,
-                            animationDelay: `${avatar.position.delay}s`,
-                        }}
-                    >
-                        <CharacterAvatar src={avatar.src} alt={avatar.alt} size={avatar.size} />
-                    </div>
-                ))}
-            </div>
+                    {/* 角色头像 */}
+                    {randomDecorations.avatars.map((avatar, index) => (
+                        <div
+                            key={`avatar-${index}`}
+                            className="absolute pointer-events-auto animate-float"
+                            style={{
+                                top: `${avatar.position.top}%`,
+                                left: `${avatar.position.left}%`,
+                                animationDelay: `${avatar.position.delay}s`,
+                            }}
+                        >
+                            <CharacterAvatar src={avatar.src} alt={avatar.alt} size={avatar.size} />
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* 主卡片 */}
             <div className="w-full max-w-md card-manga rounded-3xl p-8 space-y-6 text-center relative z-10">
