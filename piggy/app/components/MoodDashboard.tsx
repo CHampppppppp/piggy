@@ -64,7 +64,8 @@ const CHARACTER_AVATARS = [
   { src: '/zhangyu.jpg', alt: '章鱼' },
   { src: '/fortnitecat1.jpg', alt: 'Fortnite Cat' },
   { src: '/uno2.jpg', alt: 'Uno2' },
-  { src: '/uno1.jpg', alt: 'Uno1' }
+  { src: '/uno1.jpg', alt: 'Uno1' },
+  { src: '/xiaohon.jpg', alt: '小红' }
 ];
 
 const PERIOD_DURATION_DAYS = 7;
@@ -308,9 +309,9 @@ function randomSize(min: number, max: number): number {
 
 function getResponsiveAvatarCount(width: number) {
   if (width < 640) return 0;
-  if (width < 1024) return 8;
-  if (width < 1440) return 16;
-  return 24;
+  if (width < 1024) return 5;
+  if (width < 1440) return 13;
+  return 21;
 }
 
 function getAvatarMinDistance(count: number) {
