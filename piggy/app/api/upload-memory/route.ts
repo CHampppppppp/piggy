@@ -24,12 +24,49 @@ function chunkText(text: string, chunkSize = 800): string[] {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const file = formData.get('file') as File | null;
+    const rawFile = formData.get('file');
+    const file =
+      rawFile instanceof File && rawFile.size > 0 ? (rawFile as File) : null;
     const author = (formData.get('author') as string) || 'champ';
     const note = (formData.get('note') as string) || '';
 
+    if (!file && !note.trim()) {
+      return NextResponse.json(
+        { error: '至少上传一个文件，或者输入一些文字～' },
+        { status: 400 }
+      );
+    }
+
+    // 只有文字、没文件的情况：直接按文本记忆入库
+    if (!file && note.trim()) {
+      const chunks = chunkText(note);
+      const now = new Date().toISOString();
+      const baseId = `note-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      const records: MemoryRecord[] = chunks.map((chunk, index) => ({
+        id: `${baseId}-${index}`,
+        text: chunk,
+        metadata: {
+          type: 'note',
+          author: author === 'piggy' ? 'piggy' : 'champ',
+          datetime: now,
+          sourceId: baseId,
+        },
+      }));
+
+      await addMemories(records);
+
+      return NextResponse.json({
+        success: true,
+        chunks: records.length,
+      });
+    }
+
     if (!file) {
-      return NextResponse.json({ error: 'file is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'file is required' },
+        { status: 400 }
+      );
     }
 
     if (file.size > MAX_FILE_SIZE) {

@@ -11,9 +11,14 @@ function MemoryUploader() {
     e.preventDefault();
     const form = e.currentTarget;
     const fileInput = form.elements.namedItem('file') as HTMLInputElement | null;
+    const noteInput = form.elements.namedItem('note') as HTMLTextAreaElement | null;
+    const noteValue = noteInput?.value || '';
 
-    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-      showToast('先选一个文件嘛～', 'error');
+    const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+    const hasNote = noteValue.trim().length > 0;
+
+    if (!hasFile && !hasNote) {
+      showToast('先选一个文件，或者写点文字嘛～', 'error');
       return;
     }
 
@@ -47,7 +52,6 @@ function MemoryUploader() {
       className="mt-4 p-5 rounded-2xl border-2 border-dashed border-gray-300 bg-white/80 text-xs space-y-3 cursor-pointer"
     >
       <div className="font-bold text-gray-700 text-sm">
-        上传一份「我们的记忆」文件
       </div>
       <input
         type="file"
