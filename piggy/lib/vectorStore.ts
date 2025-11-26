@@ -1,4 +1,4 @@
-import { ChromaClient, type Collection } from 'chromadb';
+import { Pinecone } from '@pinecone-database/pinecone';
 import OpenAI from 'openai';
 
 export type MemoryMetadata = {
@@ -15,42 +15,30 @@ export type MemoryRecord = {
   metadata: MemoryMetadata;
 };
 
-const MEMORIES_COLLECTION = 'piggy-memories';
+const PINECONE_INDEX_NAME =
+  process.env.PINECONE_INDEX || 'piggy-memories';
+const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
 
-// 如果你本地起了 Chroma Server（推荐），设置 CHROMA_URL，例如：http://localhost:8000
-const chromaClient = new ChromaClient({
-  path: process.env.CHROMA_URL || 'http://localhost:8000',
-});
+let pineconeClient: Pinecone | null = null;
 
-let memoriesCollectionPromise: Promise<Collection | null> | null = null;
-
-async function getMemoriesCollection(): Promise<Collection | null> {
-  if (!memoriesCollectionPromise) {
-    memoriesCollectionPromise = (async () => {
-      try {
-        const existing = await chromaClient.getOrCreateCollection({
-          name: MEMORIES_COLLECTION,
-          metadata: { description: 'Piggy & Champ shared memories' },
-          // 我们自己提供 embedding，不使用 Chroma 的默认 embeddingFunction，避免额外依赖
-          embeddingFunction: {
-            generate: async () => {
-              throw new Error(
-                '[vectorStore] This embeddingFunction should not be called because embeddings are provided explicitly.'
-              );
-            },
-          },
-        });
-        return existing;
-      } catch (err) {
-        console.error('[vectorStore] Failed to getOrCreateCollection', err);
-        return null;
-      }
-    })();
+function getPineconeIndex() {
+  if (!PINECONE_API_KEY) {
+    console.warn(
+      '[vectorStore] PINECONE_API_KEY is not set. RAG will be disabled.'
+    );
+    return null;
   }
-  return memoriesCollectionPromise;
+
+  if (!pineconeClient) {
+    pineconeClient = new Pinecone({
+      apiKey: PINECONE_API_KEY,
+    });
+  }
+
+  return pineconeClient.index(PINECONE_INDEX_NAME);
 }
 
-// OpenAI 向量模型，用于生成向量写入 Chroma
+// OpenAI 向量模型，用于生成向量写入 Pinecone
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const openaiEmbedClient = OPENAI_API_KEY
@@ -91,20 +79,32 @@ async function embedTexts(texts: string[]): Promise<number[][]> {
 export async function addMemories(records: MemoryRecord[]): Promise<void> {
   if (!records.length) return;
 
-  const collection = await getMemoriesCollection();
-  if (!collection) return;
+  const index = getPineconeIndex();
+  if (!index) return;
 
-  const ids = records.map((r) => r.id);
-  const documents = records.map((r) => r.text);
-  const metadatas = records.map((r) => r.metadata);
+  const texts = records.map((r) => r.text);
+  const embeddings = await embedTexts(texts);
 
-  const embeddings = await embedTexts(documents);
+  const vectors = [];
+  for (let i = 0; i < records.length; i += 1) {
+    const emb = embeddings[i];
+    if (!emb || emb.length === 0) continue;
 
-  await collection.add({
-    ids,
-    embeddings,
-    metadatas,
-    documents,
+    vectors.push({
+      id: records[i].id,
+      values: emb,
+      metadata: {
+        text: records[i].text,
+        ...records[i].metadata,
+      },
+    });
+  }
+
+  if (!vectors.length) return;
+
+  // 先简单用单一 namespace，后续可以根据用户拆分
+  await index.upsert(vectors, {
+    namespace: 'piggy',
   });
 }
 
@@ -120,44 +120,44 @@ export async function searchMemories(
 ): Promise<RetrievedMemory[]> {
   if (!query.trim()) return [];
 
-  const collection = await getMemoriesCollection();
-  if (!collection) {
-    // 如果向量库没连上，就当作当前没有记忆，返回空列表，这样聊天至少还能正常进行
-    return [];
-  }
+  const index = getPineconeIndex();
+  if (!index) return [];
 
   const [queryEmbedding] = await embedTexts([query]);
+  if (!queryEmbedding || queryEmbedding.length === 0) return [];
 
-  const result = await collection
-    .query({
-      nResults: k,
-      queryEmbeddings: [queryEmbedding],
-      include: ['documents', 'metadatas', 'distances'],
-    })
-    .catch((err) => {
-      console.error('[vectorStore] Failed to query memories', err);
-      return {
-        documents: [[]],
-        metadatas: [[]],
-        distances: [[]],
-      };
+  try {
+    const result = await index.query({
+      vector: queryEmbedding,
+      topK: k,
+      includeMetadata: true,
+      namespace: 'piggy',
     });
 
-  const documents = result.documents?.[0] || [];
-  const metadatas = result.metadatas?.[0] || [];
-  const distances = result.distances?.[0] || [];
+    const matches = result.matches || [];
+    const items: RetrievedMemory[] = matches
+      .map((m) => {
+        const md = (m.metadata || {}) as any;
+        const text = (md.text as string) || '';
+        if (!text) return null;
+        const metadata: MemoryMetadata = {
+          type: md.type,
+          author: md.author,
+          datetime: md.datetime,
+          sourceId: md.sourceId,
+          sourceFilename: md.sourceFilename,
+        };
+        return {
+          text,
+          metadata,
+          distance: typeof m.score === 'number' ? 1 - m.score : undefined,
+        };
+      })
+      .filter(Boolean) as RetrievedMemory[];
 
-  const items: RetrievedMemory[] = [];
-  for (let i = 0; i < documents.length; i += 1) {
-    const text = documents[i] as string | null;
-    const metadata = metadatas[i] as MemoryMetadata | undefined;
-    if (!text || !metadata) continue;
-    items.push({
-      text,
-      metadata,
-      distance: typeof distances[i] === 'number' ? (distances[i] as number) : undefined,
-    });
+    return items;
+  } catch (err) {
+    console.error('[vectorStore] Failed to query Pinecone', err);
+    return [];
   }
-
-  return items;
 }
