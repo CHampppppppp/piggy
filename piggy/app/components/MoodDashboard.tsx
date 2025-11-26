@@ -282,9 +282,9 @@ function generateSideDistributedPositions(count: number, maxElementSize: number 
         sidePositions.push({
           top: Math.min(box.bottom, Math.max(box.top, top)),
           left: Math.min(box.right, Math.max(box.left, left)),
-          delay: Math.random() * 2,
-        });
-      }
+      delay: Math.random() * 2,
+    });
+  }
     }
 
     positions.push(...sidePositions);
