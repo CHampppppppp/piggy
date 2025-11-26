@@ -30,11 +30,10 @@ const MoodButton = memo(({
   <button
     type="button"
     onClick={onClick}
-    className={`cursor-pointer flex flex-col items-center p-2 rounded-xl border-2 transition-all duration-200 kawaii-hover ${
-      isSelected
-        ? 'bg-[#ffd6e7] border-black shadow-[3px_3px_0_#1a1a1a] -translate-x-0.5 -translate-y-0.5'
-        : 'bg-white border-gray-200 hover:border-black hover:shadow-[2px_2px_0_#1a1a1a]'
-    }`}
+    className={`cursor-pointer flex flex-col items-center p-2 rounded-xl border-2 transition-all duration-200 kawaii-hover ${isSelected
+      ? 'bg-[#ffd6e7] border-black shadow-[3px_3px_0_#1a1a1a] -translate-x-0.5 -translate-y-0.5'
+      : 'bg-white border-gray-200 hover:border-black hover:shadow-[2px_2px_0_#1a1a1a]'
+      }`}
   >
     <div className="relative w-14 h-14 flex items-center justify-center mb-1 overflow-hidden rounded-xl border-2 border-white shadow-[2px_2px_0_#1a1a1a]">
       <Image
@@ -68,11 +67,10 @@ const IntensityButton = memo(({
   <button
     type="button"
     onClick={onClick}
-    className={`cursor-pointer flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 border-2 ${
-      isSelected
-        ? 'bg-[#ffd6e7] border-black text-black shadow-[2px_2px_0_#1a1a1a]'
-        : 'bg-white border-gray-200 text-gray-400 hover:border-black'
-    }`}
+    className={`cursor-pointer flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-200 border-2 ${isSelected
+      ? 'bg-[#ffd6e7] border-black text-black shadow-[2px_2px_0_#1a1a1a]'
+      : 'bg-white border-gray-200 text-gray-400 hover:border-black'
+      }`}
   >
     {label}
   </button>
@@ -117,7 +115,7 @@ function MoodForm({ onSuccess, initialData }: { onSuccess?: () => void, initialD
   return (
     <form action={handleSubmit} className="space-y-3 w-full mx-auto">
       {initialData && <input type="hidden" name="id" value={initialData.id} />}
-      
+
       <div>
         <label className="flex items-center justify-center gap-2 text-sm font-bold text-black mb-2">
           <PawSticker size={18} />
@@ -168,9 +166,9 @@ function MoodForm({ onSuccess, initialData }: { onSuccess?: () => void, initialD
             </label>
             <textarea
               name="note"
-              rows={2}
+              rows={4}
               defaultValue={initialData?.note || ''}
-              className="input-manga w-full rounded-xl resize-none text-gray-700 placeholder-gray-400 text-xs py-2 px-3"
+              className="input-manga w-full rounded-xl resize-none text-gray-700 placeholder-gray-400 text-xs py-2 px-3 scrollbar-cute min-h-[140px]"
               placeholder="记录一下今天发生的小事..."
             />
           </div>
@@ -201,11 +199,10 @@ function MoodForm({ onSuccess, initialData }: { onSuccess?: () => void, initialD
       <button
         type="submit"
         disabled={!selectedMood || isSubmitting}
-        className={`w-full py-2.5 px-4 font-bold text-sm rounded-xl transition-all ${
-          !selectedMood || isSubmitting
-            ? 'bg-gray-200 text-gray-400 border-2 border-gray-300 cursor-not-allowed'
-            : 'bg-[#ffd6e7] text-black border-2 border-black shadow-[3px_3px_0_#1a1a1a] hover:shadow-[4px_4px_0_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_#1a1a1a]'
-        }`}
+        className={`w-full py-2.5 px-4 font-bold text-sm rounded-xl transition-all ${!selectedMood || isSubmitting
+          ? 'bg-gray-200 text-gray-400 border-2 border-gray-300 cursor-not-allowed'
+          : 'bg-[#ffd6e7] text-black border-2 border-black shadow-[3px_3px_0_#1a1a1a] hover:shadow-[4px_4px_0_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_#1a1a1a]'
+          }`}
       >
         {isSubmitting ? (
           <span className="flex items-center justify-center gap-2">

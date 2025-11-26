@@ -269,6 +269,32 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* 粉色可爱滚动条 */
+  .scrollbar-cute {
+    scrollbar-width: thin;
+    scrollbar-color: var(--pink-medium) var(--pink-soft);
+  }
+
+  .scrollbar-cute::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+
+  .scrollbar-cute::-webkit-scrollbar-track {
+    background: var(--pink-soft);
+    border-radius: 999px;
+  }
+
+  .scrollbar-cute::-webkit-scrollbar-thumb {
+    background: var(--pink-medium);
+    border-radius: 999px;
+    border: 2px solid var(--pink-soft);
+  }
+
+  .scrollbar-cute::-webkit-scrollbar-thumb:hover {
+    background: var(--pink-accent);
+  }
 }
 
 /* 圆点图案背景 */
@@ -287,6 +313,7 @@ body {
 
 /* 移动端性能优化：小屏幕禁用复杂背景 */
 @media (max-width: 640px) {
+
   .pattern-dots,
   .pattern-grid {
     background-image: none !important;
