@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import LoginForm from './LoginForm';
 import ForgotPasswordModal from './ForgotPasswordModal';
+import { useImagePreloader } from '@/app/hooks/useImagePreloader';
 import {
     CatSticker, DogSticker, HeartSticker, StarSticker, PawSticker,
     SnakeSticker, CapybaraSticker, PandaSticker, BunnySticker, BirdSticker,
@@ -49,6 +50,15 @@ const CHARACTER_AVATARS = [
     { src: '/wushan2.avif', alt: '巫山云海' },
     { src: '/wushan3.webp', alt: '巫山云海' },
 ];
+
+// 需要预加载的图片列表（包括角色头像和Makima图片）
+const PRELOAD_IMAGES = [
+    ...CHARACTER_AVATARS.map(avatar => avatar.src),
+    '/makima2.jpg', // DailyGreeting中的图片
+    '/makima3.jpg', // MoodDashboard中的图片
+];
+
+// 移除图片预加载工具函数，改用Hook
 
 // 生成不重叠的随机位置（考虑元素尺寸，确保不超出视口）
 // maxElementSize: 元素最大尺寸（像素），用于计算安全边距
@@ -130,6 +140,9 @@ export default function LoginScreen() {
         decorations: Array<{ Component: any; size: number; position: { top: number; left: number; delay: number } }>;
         avatars: Array<{ src: string; alt: string; size: number; position: { top: number; left: number; delay: number } }>;
     } | null>(null);
+    
+    // 使用图片预加载Hook
+    const { loaded: imagesPreloaded } = useImagePreloader(PRELOAD_IMAGES);
 
     useEffect(() => {
         // 只在客户端生成随机装饰
@@ -141,11 +154,6 @@ export default function LoginScreen() {
         // 随机选择 4-6 个小装饰（最大尺寸约45px）
         const decorCount = Math.floor(Math.random() * 3) + 4;
         const smallDecorPositions = generateRandomPositions(decorCount, 50);
-
-        // 使用全部角色头像（最大尺寸约85px）
-        const avatarCount = CHARACTER_AVATARS.length;
-        const selectedAvatars = shuffleAndPick(CHARACTER_AVATARS, avatarCount);
-        const avatarPositions = generateRandomPositions(avatarCount, 90);
 
         setRandomDecorations({
             animals: selectedAnimals.map((animal, i) => ({
@@ -161,13 +169,17 @@ export default function LoginScreen() {
                     position: smallDecorPositions[i],
                 };
             }),
-            avatars: selectedAvatars.map((avatar, i) => ({
-                ...avatar,
-                size: randomSize(65, 85),
-                position: avatarPositions[i],
-            })),
+            // 角色头像不再在登录界面显示，改为预加载
+            avatars: [],
         });
     }, []);
+
+    // 监听图片预加载状态（调试用，可移除）
+    useEffect(() => {
+        if (imagesPreloaded) {
+            console.log('所有角色头像图片已预加载完成');
+        }
+    }, [imagesPreloaded]);
 
     return (
         <div className="min-h-screen w-full bg-white pattern-dots flex items-center justify-center px-4 py-10 relative overflow-hidden">
@@ -203,20 +215,7 @@ export default function LoginScreen() {
                         </div>
                     ))}
 
-                    {/* 角色头像 */}
-                    {randomDecorations.avatars.map((avatar, index) => (
-                        <div
-                            key={`avatar-${index}`}
-                            className="absolute pointer-events-auto animate-float"
-                            style={{
-                                top: `${avatar.position.top}%`,
-                                left: `${avatar.position.left}%`,
-                                animationDelay: `${avatar.position.delay}s`,
-                            }}
-                        >
-                            <CharacterAvatar src={avatar.src} alt={avatar.alt} size={avatar.size} />
-                        </div>
-                    ))}
+                    {/* 角色头像 - 登录界面不再显示，改为预加载 */}
                 </div>
             )}
 
