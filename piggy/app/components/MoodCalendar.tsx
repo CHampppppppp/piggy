@@ -51,13 +51,13 @@ const DayCell = memo(({
         disabled={!mood}
         className={`w-full h-full rounded-xl flex items-center justify-center text-lg transition-all duration-200 border-2
         ${mood
-          ? 'bg-white border-black shadow-[2px_2px_0_#1a1a1a] hover:shadow-[4px_4px_0_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 cursor-pointer'
-          : 'border-transparent'
-        }
-        ${!mood && isToday 
-          ? 'bg-[#ffd6e7] font-bold text-black border-black border-dashed' 
-          : !mood ? 'text-gray-400' : ''
-        }
+            ? 'bg-white border-black shadow-[2px_2px_0_#1a1a1a] hover:shadow-[4px_4px_0_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 cursor-pointer'
+            : 'border-transparent'
+          }
+        ${!mood && isToday
+            ? 'bg-[#ffd6e7] font-bold text-black border-black border-dashed'
+            : !mood ? 'text-gray-400' : ''
+          }
         ${isPeriod && !mood ? (isPredicted ? 'bg-[#fff4f8] border-pink-200 border-dashed' : 'bg-pink-50 border-pink-300 border-dashed') : ''}
         ${isPeriod && mood ? (isPredicted ? 'ring-2 ring-pink-200 ring-offset-1' : 'ring-2 ring-pink-400 ring-offset-1') : ''}
       `}
@@ -75,9 +75,8 @@ const DayCell = memo(({
       {/* 经期标记 */}
       {isPeriod && (
         <span
-          className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
-            isPredicted ? 'bg-pink-200' : 'bg-pink-400'
-          }`}
+          className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${isPredicted ? 'bg-pink-200' : 'bg-pink-400'
+            }`}
         />
       )}
     </div>
@@ -142,8 +141,8 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
     <div className="w-full h-full flex flex-col">
       {/* Header - 漫画风格 */}
       <div className="flex justify-between items-center mb-3 px-2 shrink-0">
-        <button 
-          onClick={handlePrevMonth} 
+        <button
+          onClick={handlePrevMonth}
           className="cursor-pointer p-2 rounded-full border-3 border-black bg-white hover:bg-[#ffd6e7] transition-all shadow-[2px_2px_0_#1a1a1a] hover:shadow-[3px_3px_0_#1a1a1a] kawaii-hover"
         >
           <ChevronLeft size={20} strokeWidth={3} className="text-black" />
@@ -151,8 +150,8 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
         <h2 className="text-xl font-bold manga-text-thin px-4 py-1 bg-[#ffd6e7] rounded-full border-3 border-black shadow-[3px_3px_0_#1a1a1a]">
           {format(currentMonth, 'yyyy年 M月', { locale: zhCN })}
         </h2>
-        <button 
-          onClick={handleNextMonth} 
+        <button
+          onClick={handleNextMonth}
           className="cursor-pointer p-2 rounded-full border-3 border-black bg-white hover:bg-[#ffd6e7] transition-all shadow-[2px_2px_0_#1a1a1a] hover:shadow-[3px_3px_0_#1a1a1a] kawaii-hover"
         >
           <ChevronRight size={20} strokeWidth={3} className="text-black" />
@@ -162,11 +161,10 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
       {/* Days of Week - 漫画风格 */}
       <div className="grid grid-cols-7 gap-1 mb-2 px-2 shrink-0">
         {['日', '一', '二', '三', '四', '五', '六'].map((day, index) => (
-          <div 
-            key={day} 
-            className={`text-center text-xs font-bold py-1 ${
-              index === 0 || index === 6 ? 'text-pink-500' : 'text-black'
-            }`}
+          <div
+            key={day}
+            className={`text-center text-xs font-bold py-1 ${index === 0 || index === 6 ? 'text-pink-500' : 'text-black'
+              }`}
           >
             {day}
           </div>
@@ -236,7 +234,7 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {onEditMood && differenceInCalendarDays(new Date(), new Date(selectedMood.created_at)) <= 3 && (
+                {onEditMood && differenceInCalendarDays(new Date(), new Date(selectedMood.created_at)) <= 2 && (
                   <button
                     onClick={() => {
                       onEditMood(selectedMood);
@@ -266,11 +264,10 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
                 {[1, 2, 3].map((level) => (
                   <div
                     key={level}
-                    className={`flex-1 h-3 rounded-full border-2 border-black transition-colors ${
-                      level <= selectedMood.intensity 
-                        ? 'bg-[#ffd6e7]' 
+                    className={`flex-1 h-3 rounded-full border-2 border-black transition-colors ${level <= selectedMood.intensity
+                        ? 'bg-[#ffd6e7]'
                         : 'bg-gray-100'
-                    }`}
+                      }`}
                   />
                 ))}
               </div>

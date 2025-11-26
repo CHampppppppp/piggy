@@ -2,6 +2,7 @@
 
 import pool from './db';
 import { revalidatePath } from 'next/cache';
+import { differenceInCalendarDays } from 'date-fns';
 
 import type { Mood, Period } from './types';
 import { sendSuperMoodAlert } from './email';
@@ -19,6 +20,23 @@ export async function saveMood(formData: FormData) {
   if (!mood) throw new Error('Mood is required');
 
   if (id) {
+    // 只允许修改最近三天内的记录（包括当天）
+    const { rows } = await pool.query(
+      'SELECT created_at FROM moods WHERE id = ?',
+      [id]
+    );
+
+    if (!rows[0]) {
+      throw new Error('Mood not found');
+    }
+
+    const createdAt = new Date(rows[0].created_at);
+    const daysDiff = differenceInCalendarDays(new Date(), createdAt);
+
+    if (daysDiff > 2) {
+      throw new Error('只能修改最近三天内的记录哦');
+    }
+
     // 更新现有记录
     await pool.query(
       'UPDATE moods SET mood = ?, intensity = ?, note = ? WHERE id = ?',
