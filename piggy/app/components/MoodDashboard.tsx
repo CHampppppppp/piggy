@@ -228,7 +228,7 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
             {randomDecorations.animals.map((animal, index) => (
               <div
                 key={`animal-${index}`}
-                className="absolute animate-float"
+                className="absolute animate-float hidden sm:block"
                 style={{
                   top: `${animal.position.top}%`,
                   left: `${animal.position.left}%`,
@@ -257,7 +257,7 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
             {randomDecorations.avatars.map((avatar, index) => (
               <div
                 key={`avatar-${index}`}
-                className="absolute pointer-events-auto animate-float"
+                className="absolute pointer-events-auto animate-float hidden sm:block"
                 style={{
                   top: `${avatar.position.top}%`,
                   left: `${avatar.position.left}%`,
@@ -287,6 +287,8 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
                 width={56}
                 height={56}
                 className="w-full h-full object-cover"
+                priority={false}
+                loading="lazy"
               />
             </div>
 

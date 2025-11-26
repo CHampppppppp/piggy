@@ -285,6 +285,14 @@ body {
   background-size: 20px 20px;
 }
 
+/* 移动端性能优化：小屏幕禁用复杂背景 */
+@media (max-width: 640px) {
+  .pattern-dots,
+  .pattern-grid {
+    background-image: none !important;
+  }
+}
+
 /* 输入框样式 */
 .input-manga {
   border: 3px solid var(--black);

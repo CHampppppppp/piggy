@@ -43,6 +43,8 @@ const MoodButton = memo(({
         fill
         sizes="56px"
         className="object-cover"
+        priority={false}
+        loading="lazy"
       />
     </div>
     <span className={`text-xs font-bold ${isSelected ? 'text-black' : 'text-gray-500'}`}>

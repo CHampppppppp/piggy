@@ -91,13 +91,13 @@ export default function DailyGreeting() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* 装饰性贴纸 */}
-            <div className="absolute -top-6 -left-6 animate-float">
+            <div className="absolute -top-6 -left-6 animate-float hidden sm:block">
               <CatSticker size={50} />
             </div>
-            <div className="absolute -top-4 -right-4 animate-float" style={{ animationDelay: '0.3s' }}>
+            <div className="absolute -top-4 -right-4 animate-float hidden sm:block" style={{ animationDelay: '0.3s' }}>
               <StarSticker size={40} />
             </div>
-            <div className="absolute -bottom-5 -right-5 animate-float" style={{ animationDelay: '0.6s' }}>
+            <div className="absolute -bottom-5 -right-5 animate-float hidden sm:block" style={{ animationDelay: '0.6s' }}>
               <DogSticker size={45} />
             </div>
             <div className="absolute -bottom-4 -left-4 animate-float" style={{ animationDelay: '0.9s' }}>

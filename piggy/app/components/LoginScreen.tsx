@@ -173,7 +173,7 @@ export default function LoginScreen() {
         <div className="min-h-screen w-full bg-white pattern-dots flex items-center justify-center px-4 py-10 relative overflow-hidden">
             {/* 随机装饰性贴纸 */}
             {randomDecorations && (
-                <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 pointer-events-none hidden sm:block">
                     {/* 动物贴纸 */}
                     {randomDecorations.animals.map((animal, index) => (
                         <div
@@ -225,11 +225,13 @@ export default function LoginScreen() {
                 {/* Makima 贴画装饰 */}
                 <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full overflow-hidden border-4 border-black shadow-lg sticker-hover">
                     <Image
-                        src="/makima2.jpg"
-                        alt="Makima"
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
+                    src="/makima2.jpg"
+                    alt="Makima"
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover"
+                    priority={false}
+                    loading="lazy"
                     />
                 </div>
 
