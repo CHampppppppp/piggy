@@ -46,12 +46,12 @@ export function getSystemPrompt() {
   return SYSTEM_PROMPT;
 }
 
-export async function callDeepseekChat(options: {
+type ChatOptions = {
   messages: ChatMessage[];
   context?: string;
-}) {
-  const { messages, context } = options;
+};
 
+function buildMessages({ messages, context }: ChatOptions): ChatMessage[] {
   const systemMessage: ChatMessage = {
     role: 'system',
     content:
@@ -62,6 +62,11 @@ export async function callDeepseekChat(options: {
   };
 
   const finalMessages: ChatMessage[] = [systemMessage, ...messages];
+  return finalMessages;
+}
+
+export async function callDeepseekChat(options: ChatOptions) {
+  const finalMessages = buildMessages(options);
 
   const completion = await deepseekClient.chat.completions.create({
     model: 'deepseek-chat',
@@ -70,6 +75,27 @@ export async function callDeepseekChat(options: {
 
   const reply = completion.choices[0]?.message?.content || '';
   return reply;
+}
+
+// 流式聊天：返回一个异步迭代器，每次产出一小段文本
+export async function streamDeepseekChat(options: ChatOptions) {
+  const finalMessages = buildMessages(options);
+
+  const stream = await deepseekClient.chat.completions.create({
+    model: 'deepseek-chat',
+    messages: finalMessages,
+    stream: true,
+  });
+
+  async function* iterChunks(): AsyncGenerator<string> {
+    for await (const chunk of stream) {
+      const delta = chunk.choices?.[0]?.delta?.content;
+      if (!delta) continue;
+      yield delta;
+    }
+  }
+
+  return iterChunks();
 }
 
 export async function embedTexts(texts: string[]): Promise<number[][]> {

@@ -57,9 +57,9 @@ function MemoryUploader() {
       />
       <textarea
         name="note"
-        rows={2}
+        rows={5}
         placeholder="可以简单写一下这个文件的大概内容，比如：我们的旅行计划、一起看的书笔记..."
-        className="w-full mt-1 rounded-lg border border-gray-200 px-2 py-1 text-xs resize-none"
+        className="w-full mt-1 rounded-lg border border-gray-200 px-3 py-2 text-xs resize-none min-h-[140px]"
       />
       <input type="hidden" name="author" value="champ" />
       <button

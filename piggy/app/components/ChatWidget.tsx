@@ -32,7 +32,11 @@ function ChatWidget() {
       role: 'user',
       content,
     };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage, {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+    }]);
     setInput('');
     setLoading(true);
 
@@ -45,29 +49,57 @@ function ChatWidget() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: payloadMessages }),
+        body: JSON.stringify({ messages: payloadMessages, stream: true }),
       });
 
-      const data = await res.json();
       if (!res.ok) {
-        const errorText = data?.error || 'Champ 有点累了，稍后再试试？';
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `error-${Date.now()}`,
-            role: 'assistant',
-            content: errorText,
-          },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `assistant-${Date.now()}`,
-            role: 'assistant',
-            content: data.reply || '（Champ 沉默了一下，好像没说出什么来…）',
-          },
-        ]);
+        const errorText = 'Champ 有点累了，稍后再试试？';
+        setMessages((prev) => {
+          const next = [...prev];
+          const lastIndex = next.findIndex((m) => m.id.startsWith('assistant-') && m.content === '');
+          if (lastIndex !== -1) {
+            next[lastIndex] = {
+              ...next[lastIndex],
+              content: errorText,
+            };
+          } else {
+            next.push({
+              id: `error-${Date.now()}`,
+              role: 'assistant',
+              content: errorText,
+            });
+          }
+          return next;
+        });
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        return;
+      }
+
+      const decoder = new TextDecoder('utf-8');
+
+      // 逐块读取流式内容，并实时更新最后一条 assistant 消息
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunkText = decoder.decode(value, { stream: true });
+        if (!chunkText) continue;
+
+        setMessages((prev) => {
+          const next = [...prev];
+          const lastIndex = next.length - 1;
+          if (lastIndex >= 0 && next[lastIndex].role === 'assistant') {
+            next[lastIndex] = {
+              ...next[lastIndex],
+              content: next[lastIndex].content + chunkText,
+            };
+          }
+          return next;
+        });
       }
     } catch (err) {
       console.error(err);

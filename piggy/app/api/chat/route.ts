@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callDeepseekChat, type ChatMessage, getSystemPrompt } from '@/lib/llm';
+import {
+  callDeepseekChat,
+  type ChatMessage,
+  streamDeepseekChat,
+  getSystemPrompt,
+} from '@/lib/llm';
 import { searchMemories } from '@/lib/vectorStore';
 
 type ApiChatMessage = {
@@ -48,6 +53,37 @@ export async function POST(req: NextRequest) {
       content: m.content,
     })) as ChatMessage[];
 
+    // 如果前端请求了流式传输（stream: true），走流式响应
+    if (body?.stream) {
+      const encoder = new TextEncoder();
+      const iterator = await streamDeepseekChat({
+        messages: llmMessages,
+        context,
+      });
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const chunk of iterator) {
+              controller.enqueue(encoder.encode(chunk));
+            }
+            controller.close();
+          } catch (err) {
+            console.error('[api/chat] streaming error', err);
+            controller.error(err);
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        },
+      });
+    }
+
+    // 默认还是一次性返回完整消息（非流式）
     const reply = await callDeepseekChat({
       messages: llmMessages,
       context,
