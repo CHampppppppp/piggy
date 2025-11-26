@@ -10,20 +10,18 @@ import {
   addMonths,
   subMonths,
   getDay,
-  addDays,
-  isWithinInterval,
   differenceInCalendarDays
 } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, X, Edit2 } from 'lucide-react';
-import type { Mood, Period } from '@/lib/types';
+import type { Mood } from '@/lib/types';
 import { MOODS } from './MoodForm';
 import { HeartSticker, PawSticker } from './KawaiiStickers';
 
 // Define prop type
 interface MoodCalendarProps {
   moods: Mood[];
-  periods: Period[];
+  periodStatus: Record<string, 'actual' | 'predicted'>;
   onEditMood?: (mood: Mood) => void;
 }
 
@@ -31,23 +29,27 @@ interface MoodCalendarProps {
 const DayCell = memo(({
   day,
   mood,
-  isPeriod,
+  periodType,
   isToday,
   onMoodClick,
   getMoodEmoji
 }: {
   day: Date;
   mood: Mood | null;
-  isPeriod: boolean;
+  periodType: 'actual' | 'predicted' | null;
   isToday: boolean;
   onMoodClick: (mood: Mood) => void;
   getMoodEmoji: (moodValue: string) => string;
-}) => (
-  <div className="aspect-square relative">
-    <button
-      onClick={() => mood && onMoodClick(mood)}
-      disabled={!mood}
-      className={`w-full h-full rounded-xl flex items-center justify-center text-lg transition-all duration-200 border-2
+}) => {
+  const isPeriod = Boolean(periodType);
+  const isPredicted = periodType === 'predicted';
+
+  return (
+    <div className="aspect-square relative">
+      <button
+        onClick={() => mood && onMoodClick(mood)}
+        disabled={!mood}
+        className={`w-full h-full rounded-xl flex items-center justify-center text-lg transition-all duration-200 border-2
         ${mood
           ? 'bg-white border-black shadow-[2px_2px_0_#1a1a1a] hover:shadow-[4px_4px_0_#1a1a1a] hover:-translate-x-0.5 hover:-translate-y-0.5 cursor-pointer'
           : 'border-transparent'
@@ -56,34 +58,39 @@ const DayCell = memo(({
           ? 'bg-[#ffd6e7] font-bold text-black border-black border-dashed' 
           : !mood ? 'text-gray-400' : ''
         }
-        ${isPeriod && !mood ? 'bg-pink-50 border-pink-300 border-dashed' : ''}
-        ${isPeriod && mood ? 'ring-2 ring-pink-400 ring-offset-1' : ''}
+        ${isPeriod && !mood ? (isPredicted ? 'bg-[#fff4f8] border-pink-200 border-dashed' : 'bg-pink-50 border-pink-300 border-dashed') : ''}
+        ${isPeriod && mood ? (isPredicted ? 'ring-2 ring-pink-200 ring-offset-1' : 'ring-2 ring-pink-400 ring-offset-1') : ''}
       `}
-    >
-      {mood ? (
-        <span className="text-2xl kawaii-hover">
-          {getMoodEmoji(mood.mood)}
-        </span>
-      ) : (
-        <span className={`text-sm font-bold ${isPeriod ? 'text-pink-500' : ''}`}>
-          {format(day, 'd')}
-        </span>
+      >
+        {mood ? (
+          <span className="text-2xl kawaii-hover">
+            {getMoodEmoji(mood.mood)}
+          </span>
+        ) : (
+          <span className={`text-sm font-bold ${isPeriod ? (isPredicted ? 'text-pink-300' : 'text-pink-500') : ''}`}>
+            {format(day, 'd')}
+          </span>
+        )}
+      </button>
+      {/* 经期标记 */}
+      {isPeriod && (
+        <span
+          className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${
+            isPredicted ? 'bg-pink-200' : 'bg-pink-400'
+          }`}
+        />
       )}
-    </button>
-    {/* 经期标记 */}
-    {isPeriod && (
-      <span className="absolute -top-1 -right-1 w-3 h-3 bg-pink-400 rounded-full border-2 border-black" />
-    )}
-    {/* 强烈情绪标记 */}
-    {mood && mood.intensity >= 2 && (
-      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#ffd6e7] rounded-full border-2 border-black" />
-    )}
-  </div>
-));
+      {/* 强烈情绪标记 */}
+      {mood && mood.intensity >= 2 && (
+        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#ffd6e7] rounded-full border-2 border-black" />
+      )}
+    </div>
+  );
+});
 
 DayCell.displayName = 'DayCell';
 
-function MoodCalendar({ moods, periods, onEditMood }: MoodCalendarProps) {
+function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
 
@@ -116,16 +123,11 @@ function MoodCalendar({ moods, periods, onEditMood }: MoodCalendarProps) {
     };
   }, [moods]);
 
-  // 检查某天是否在经期内
-  const isPeriodDay = useCallback((day: Date) => {
-    return periods.some(period => {
-      const startDate = new Date(period.start_date);
-      const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-      const end = addDays(start, 6);
-
-      return isWithinInterval(day, { start, end });
-    });
-  }, [periods]);
+  // 获取某天的经期类型
+  const getPeriodType = useCallback((day: Date) => {
+    const dateKey = format(day, 'yyyy-MM-dd');
+    return periodStatus[dateKey] ?? null;
+  }, [periodStatus]);
 
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -175,6 +177,18 @@ function MoodCalendar({ moods, periods, onEditMood }: MoodCalendarProps) {
         ))}
       </div>
 
+      {/* Legend */}
+      <div className="flex items-center gap-4 px-2 mb-1 text-[10px] font-bold text-gray-500">
+        <div className="flex items-center gap-1">
+          <span className="w-3 h-3 bg-pink-400 border-2 border-black rounded-full" />
+          <span>已记录经期</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-3 h-3 bg-pink-200 border-2 border-black rounded-full" />
+          <span>预测经期</span>
+        </div>
+      </div>
+
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1.5 p-2 flex-1 overflow-y-auto content-start">
         {/* 上个月的空位 */}
@@ -185,7 +199,7 @@ function MoodCalendar({ moods, periods, onEditMood }: MoodCalendarProps) {
         {/* 日期 */}
         {daysInMonth.map((day) => {
           const mood = getMoodForDay(day);
-          const isPeriod = isPeriodDay(day);
+          const periodType = getPeriodType(day);
           const isToday = isSameDay(day, new Date());
 
           return (
@@ -193,7 +207,7 @@ function MoodCalendar({ moods, periods, onEditMood }: MoodCalendarProps) {
               key={day.toString()}
               day={day}
               mood={mood}
-              isPeriod={isPeriod}
+              periodType={periodType}
               isToday={isToday}
               onMoodClick={setSelectedMood}
               getMoodEmoji={getMoodEmoji}

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar as CalendarIcon, List as ListIcon, type LucideIcon, Plus, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
 import MoodCalendar from './MoodCalendar';
 import MoodHistory from './MoodHistory';
 import MoodForm from './MoodForm';
@@ -55,7 +56,95 @@ const CHARACTER_AVATARS = [
   { src: '/wushan1.webp', alt: '巫山云海' },
   { src: '/wushan2.avif', alt: '巫山云海' },
   { src: '/wushan3.webp', alt: '巫山云海' },
+  { src: '/catty.jpg', alt: 'Catty' },
+  { src: '/kapibala.jpg', alt: 'Capybara' },
+  { src: '/kunomi.jpg', alt: 'Kunomi' },
+  { src: '/kunomi1.jpg', alt: 'Kunomi' },
+  { src: '/penguin.jpg', alt: 'Penguin' },
+  { src: '/zhangyu.jpg', alt: '章鱼' },
+  { src: '/fortnitecat.jpg', alt: 'Fortnite Cat' },
+  { src: '/uno2.jpg', alt: 'Uno2' },
+  { src: '/uno1.jpg', alt: 'Uno1'}
 ];
+
+const PERIOD_DURATION_DAYS = 7;
+const DEFAULT_CYCLE_DAYS = 28;
+const MIN_CYCLE_DAYS = 21;
+const MAX_CYCLE_DAYS = 35;
+const PREDICTION_HORIZON_DAYS = 180;
+
+type PeriodStatus = Record<string, 'actual' | 'predicted'>;
+
+const toDateKey = (date: Date) => {
+  return date.toISOString().split('T')[0];
+};
+
+const normalizeDate = (date: Date) => {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+};
+
+function addPeriodInterval(status: PeriodStatus, start: Date, type: 'actual' | 'predicted') {
+  for (let i = 0; i < PERIOD_DURATION_DAYS; i++) {
+    const current = addDays(start, i);
+    const key = toDateKey(current);
+    if (type === 'actual' || !status[key]) {
+      status[key] = type;
+    }
+  }
+}
+
+function calculateCycleLengthDays(sortedPeriods: Period[]) {
+  if (sortedPeriods.length < 2) {
+    return DEFAULT_CYCLE_DAYS;
+  }
+
+  const diffs: number[] = [];
+  for (let i = 1; i < sortedPeriods.length; i++) {
+    const prev = normalizeDate(new Date(sortedPeriods[i - 1].start_date));
+    const current = normalizeDate(new Date(sortedPeriods[i].start_date));
+    const diff = differenceInCalendarDays(current, prev);
+    if (diff > 0) {
+      diffs.push(diff);
+    }
+  }
+
+  if (!diffs.length) {
+    return DEFAULT_CYCLE_DAYS;
+  }
+
+  const avg = Math.round(diffs.reduce((sum, d) => sum + d, 0) / diffs.length);
+  return Math.max(MIN_CYCLE_DAYS, Math.min(MAX_CYCLE_DAYS, avg));
+}
+
+function buildPeriodStatus(periods: Period[]): PeriodStatus {
+  const status: PeriodStatus = {};
+  if (!periods.length) {
+    return status;
+  }
+
+  const sorted = [...periods].sort(
+    (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+  );
+
+  sorted.forEach((period) => {
+    const start = normalizeDate(new Date(period.start_date));
+    addPeriodInterval(status, start, 'actual');
+  });
+
+  const cycleDays = calculateCycleLengthDays(sorted);
+  const lastActualStart = normalizeDate(new Date(sorted[sorted.length - 1].start_date));
+  const horizonEnd = addDays(startOfDay(new Date()), PREDICTION_HORIZON_DAYS);
+
+  let nextStart = addDays(lastActualStart, cycleDays);
+  while (nextStart <= horizonEnd) {
+    addPeriodInterval(status, nextStart, 'predicted');
+    nextStart = addDays(nextStart, cycleDays);
+  }
+
+  return status;
+}
 
 // 生成不重叠的随机位置（针对 Dashboard 的边缘区域，考虑元素尺寸不超出视口）
 // maxElementSize: 元素最大尺寸（像素），用于计算安全边距
@@ -124,7 +213,14 @@ function randomSize(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function createRandomDecorations() {
+function getResponsiveAvatarCount(width: number) {
+  if (width < 640) return 0;
+  if (width < 1024) return 8;
+  if (width < 1440) return 16;
+  return 24;
+}
+
+function createRandomDecorations(avatarCount?: number) {
   // 随机选择 7-9 个动物（最大尺寸约95px）
   const animalCount = Math.floor(Math.random() * 3) + 7;
   const selectedAnimals = shuffleAndPick(ANIMAL_STICKERS, animalCount);
@@ -134,10 +230,11 @@ function createRandomDecorations() {
   const decorCount = Math.floor(Math.random() * 3) + 3;
   const smallDecorPositions = generateRandomPositions(decorCount, 55);
 
-  // 使用全部角色头像（最大尺寸约108px）
-  const avatarCount = CHARACTER_AVATARS.length;
-  const selectedAvatars = shuffleAndPick(CHARACTER_AVATARS, avatarCount);
-  const avatarPositions = generateRandomPositions(avatarCount, 115);
+  // 根据屏幕尺寸使用部分角色头像（最大尺寸约108px）
+  const maximumAvatars = avatarCount ?? CHARACTER_AVATARS.length;
+  const finalAvatarCount = Math.min(maximumAvatars, CHARACTER_AVATARS.length);
+  const selectedAvatars = shuffleAndPick(CHARACTER_AVATARS, finalAvatarCount);
+  const avatarPositions = generateRandomPositions(finalAvatarCount, 115);
 
   return {
     animals: selectedAnimals.map((animal, i) => ({
@@ -197,9 +294,46 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingMood, setEditingMood] = useState<Mood | null>(null);
   const [randomDecorations, setRandomDecorations] = useState<ReturnType<typeof createRandomDecorations> | null>(null);
+  const periodStatus = useMemo(() => buildPeriodStatus(periods), [periods]);
+  const latestMood = useMemo(() => moods.length ? moods.reduce((latest, mood) => (
+    new Date(mood.created_at) > new Date(latest.created_at) ? mood : latest
+  ), moods[0]) : null, [moods]);
+  const hasTodayMood = useMemo(() => {
+    if (!latestMood) return false;
+    const createdAt = new Date(latestMood.created_at);
+    const today = new Date();
+    return createdAt.getFullYear() === today.getFullYear() &&
+      createdAt.getMonth() === today.getMonth() &&
+      createdAt.getDate() === today.getDate();
+  }, [latestMood]);
 
   useEffect(() => {
-    setRandomDecorations(createRandomDecorations());
+    if (typeof window === 'undefined') return;
+
+    const updateDecorations = () => {
+      const avatarCount = getResponsiveAvatarCount(window.innerWidth);
+      setRandomDecorations(createRandomDecorations(avatarCount));
+    };
+
+    updateDecorations();
+
+    let resizeTimeout: number | null = null;
+    const handleResize = () => {
+      if (resizeTimeout) {
+        window.clearTimeout(resizeTimeout);
+      }
+      resizeTimeout = window.setTimeout(() => {
+        updateDecorations();
+      }, 200);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimeout) {
+        window.clearTimeout(resizeTimeout);
+      }
+    };
   }, []);
 
   const handleEditMood = (mood: Mood) => {
@@ -312,7 +446,7 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
                   transition={{ duration: 0.25, ease: "easeOut" }}
                   className="h-full"
                 >
-                  <MoodCalendar moods={moods} periods={periods} onEditMood={handleEditMood} />
+                  <MoodCalendar moods={moods} periodStatus={periodStatus} onEditMood={handleEditMood} />
                 </motion.div>
               ) : (
                 <motion.div
@@ -333,13 +467,18 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
           <div className="flex-none absolute bottom-6 left-0 right-0 flex flex-col items-center gap-4 z-20 pointer-events-none">
             {/* 添加按钮 - 可爱肉球风格 */}
             <motion.button
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleOpenAdd}
-              className="cursor-pointer pointer-events-auto relative w-16 h-16 flex items-center justify-center bg-[#ffd6e7] rounded-full border-4 border-black shadow-[4px_4px_0_#1a1a1a] hover:shadow-[6px_6px_0_#1a1a1a] transition-shadow"
-              aria-label="添加心情记录"
+              whileHover={{ scale: hasTodayMood ? 1 : 1.1, rotate: hasTodayMood ? 0 : 5 }}
+              whileTap={{ scale: hasTodayMood ? 1 : 0.9 }}
+              onClick={() => !hasTodayMood && handleOpenAdd()}
+              className={`cursor-pointer pointer-events-auto relative w-16 h-16 flex items-center justify-center rounded-full border-4 border-black transition-shadow
+                ${hasTodayMood ? 'bg-gray-200 border-gray-300 shadow-[2px_2px_0_#999]'
+                  : 'bg-[#ffd6e7] shadow-[4px_4px_0_#1a1a1a] hover:shadow-[6px_6px_0_#1a1a1a]'
+                }
+              `}
+              aria-label={hasTodayMood ? '今日已记录' : '添加心情记录'}
+              disabled={hasTodayMood}
             >
-              <Plus size={32} strokeWidth={3} className="text-black" />
+              <Plus size={32} strokeWidth={3} className={hasTodayMood ? 'text-gray-400' : 'text-black'} />
             </motion.button>
 
             {/* Switch Tabs - 漫画风格 */}
