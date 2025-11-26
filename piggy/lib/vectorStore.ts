@@ -54,7 +54,10 @@ async function getMemoriesCollection(): Promise<Collection | null> {
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const openaiEmbedClient = OPENAI_API_KEY
-  ? new OpenAI({ apiKey: OPENAI_API_KEY })
+  ? new OpenAI({
+      apiKey: OPENAI_API_KEY,
+      timeout: 15000, // 15s 超时时间，避免请求卡太久
+    })
   : null;
 
 async function embedTexts(texts: string[]): Promise<number[][]> {
@@ -67,12 +70,21 @@ async function embedTexts(texts: string[]): Promise<number[][]> {
     return texts.map(() => []);
   }
 
-  const res = await openaiEmbedClient.embeddings.create({
-    model: 'text-embedding-3-small',
-    input: texts,
-  });
+  try {
+    const res = await openaiEmbedClient.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: texts,
+    });
 
-  return res.data.map((item) => item.embedding as number[]);
+    return res.data.map((item) => item.embedding as number[]);
+  } catch (err) {
+    console.error(
+      '[vectorStore] Failed to create embeddings from OpenAI, RAG will be skipped for this request',
+      err
+    );
+    // 返回空向量：后续查询会得到空结果，相当于这次对话不使用 RAG，但聊天正常
+    return texts.map(() => []);
+  }
 }
 
 export async function addMemories(records: MemoryRecord[]): Promise<void> {
