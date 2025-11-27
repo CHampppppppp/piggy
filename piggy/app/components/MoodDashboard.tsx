@@ -463,12 +463,21 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
 
     // 延迟一小段时间再发送，避免影响页面加载性能
     const timer = setTimeout(() => {
+      console.log('[LoginLog] 发送登录日志请求...');
       fetch('/api/log-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-      }).catch(() => {
-        // 静默失败，不影响用户体验
-      });
+      })
+        .then(response => {
+          if (response.ok) {
+            console.log('[LoginLog] 登录日志记录成功');
+          } else {
+            console.warn('[LoginLog] 登录日志记录失败，状态码:', response.status);
+          }
+        })
+        .catch(error => {
+          console.error('[LoginLog] 登录日志请求失败:', error);
+        });
     }, 500);
 
     return () => clearTimeout(timer);
