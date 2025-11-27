@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     // 分类查询类型并构建上下文
     let context = '';
     if (query.trim()) {
-      const queryType = classifyQuery(query);
+      const queryType = await classifyQuery(query);
       console.log('[api/chat] query type:', queryType);
       const currentInfo = getCurrentInfo();
       

@@ -5,6 +5,9 @@ export type ChatMessage = {
   content: string;
 };
 
+type QueryType = 'realtime' | 'memory' | 'mixed';
+const QUERY_TYPES: QueryType[] = ['realtime', 'memory', 'mixed'];
+
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
 if (!DEEPSEEK_API_KEY) {
@@ -17,6 +20,11 @@ const deepseekClient = new OpenAI({
   apiKey: DEEPSEEK_API_KEY,
   baseURL: process.env.DEEPSEEK_API_BASE || 'https://api.deepseek.com',
 });
+
+const SMART_CLASSIFIER_ENABLED =
+  process.env.SMART_QUERY_CLASSIFIER === 'true' && Boolean(DEEPSEEK_API_KEY);
+const SMART_CLASSIFIER_MODEL =
+  process.env.SMART_CLASSIFIER_MODEL || 'deepseek-chat';
 
 // Champ 的基础人设提示词
 const SYSTEM_PROMPT = `
@@ -117,41 +125,138 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
 }
 
 // 查询分类：判断用户是在询问实时信息还是历史记忆
-export function classifyQuery(query: string): 'realtime' | 'memory' | 'mixed' {
-  const realtimeKeywords = [
-    '现在', '当前', '今天', '今日', '此刻', '目前', 
-    '几点', '什么时间', '什么时候', '多少点', 
-    '今天是', '现在是', '当前是',
-    '天气', '温度', '气温',
-    '最新', '现状', '当下'
-  ];
-  
-  const memoryKeywords = [
-    '记得', '回忆', '以前', '之前', '那天', '那时', 
-    '曾经', '过去', '历史', '上次', '前面',
-    '我们', '你还记得', '想起', '回想'
-  ];
-  
-  const queryLower = query.toLowerCase();
-  
-  const hasRealtimeKeywords = realtimeKeywords.some(keyword => 
-    queryLower.includes(keyword)
+const REALTIME_KEYWORDS = [
+  '现在',
+  '当前',
+  '今日',
+  '此刻',
+  '目前',
+  '几点',
+  '多少点',
+  '今天是',
+  '现在是',
+  '当前是',
+  '天气',
+  '温度',
+  '气温',
+  '最新',
+  '现状',
+  '当下',
+];
+
+const MEMORY_KEYWORDS = [
+  '记得',
+  '回忆',
+  '以前',
+  '之前',
+  '那天',
+  '那时',
+  '曾经',
+  '过去',
+  '历史',
+  '上次',
+  '前面',
+  '我们',
+  '你还记得',
+  '想起',
+  '回想',
+  '明天',
+  '后天',
+  '周末',
+  '提醒我',
+  '帮我记',
+  '计划',
+  '安排',
+];
+
+const CLASSIFIER_SYSTEM_PROMPT = `
+你是一个极简的分类器。根据用户的提问判断它属于以下三类之一：
+- realtime：询问当前时间、日期、天气、即时状态等实时信息。
+- memory：询问过去或未来计划、提醒、需要依赖记忆或资料的内容。
+- mixed：同一问题中既包含实时信息也包含记忆信息。
+
+无论用户说什么，你只能回应 realtime、memory 或 mixed，不要输出其它文字。`.trim();
+
+const CLASSIFIER_FEW_SHOTS: ChatMessage[] = [
+  { role: 'user', content: '现在几点啦' },
+  { role: 'assistant', content: 'realtime' },
+  { role: 'user', content: '你记得上周我们吃了什么吗' },
+  { role: 'assistant', content: 'memory' },
+  { role: 'user', content: '现在星期几？顺便提醒我周末是不是要去漫展' },
+  { role: 'assistant', content: 'mixed' },
+  { role: 'user', content: '帮我记得后天中午吃完寿司去漫展' },
+  { role: 'assistant', content: 'memory' },
+];
+
+function classifyByKeywords(query: string): QueryType {
+  const normalized = query.toLowerCase();
+  const hasRealtime = REALTIME_KEYWORDS.some((keyword) =>
+    normalized.includes(keyword)
   );
-  
-  const hasMemoryKeywords = memoryKeywords.some(keyword => 
-    queryLower.includes(keyword)
+  const hasMemory = MEMORY_KEYWORDS.some((keyword) =>
+    normalized.includes(keyword)
   );
-  
-  if (hasRealtimeKeywords && hasMemoryKeywords) {
+
+  if (hasRealtime && hasMemory) {
     return 'mixed';
-  } else if (hasRealtimeKeywords) {
+  }
+  if (hasRealtime) {
     return 'realtime';
-  } else if (hasMemoryKeywords) {
-    return 'memory';
-  } else {
-    // 默认情况下，如果不确定，倾向于使用记忆检索
+  }
+  if (hasMemory) {
     return 'memory';
   }
+  return 'memory';
+}
+
+async function classifyWithLLM(query: string): Promise<QueryType | null> {
+  if (!SMART_CLASSIFIER_ENABLED) {
+    return null;
+  }
+
+  try {
+    const completion = await deepseekClient.chat.completions.create({
+      model: SMART_CLASSIFIER_MODEL,
+      max_tokens: 4,
+      temperature: 0,
+      messages: [
+        {
+          role: 'system',
+          content: CLASSIFIER_SYSTEM_PROMPT,
+        },
+        ...CLASSIFIER_FEW_SHOTS,
+        {
+          role: 'user',
+          content: query.trim(),
+        },
+      ],
+    });
+
+    const answer =
+      completion.choices[0]?.message?.content?.toLowerCase().trim() || '';
+    const found = QUERY_TYPES.find((label) => answer.includes(label));
+    if (found) {
+      return found;
+    }
+  } catch (error) {
+    console.error('[llm] smart classifier failed, fallback to keywords', error);
+  }
+
+  return null;
+}
+
+export async function classifyQuery(query: string): Promise<QueryType> {
+  const trimmed = (query || '').trim();
+  if (!trimmed) {
+    return 'memory';
+  }
+
+  const aiGuess = await classifyWithLLM(trimmed);
+  if (aiGuess) {
+    return aiGuess;
+  }
+
+  return classifyByKeywords(trimmed);
 }
 
 // 获取当前实时信息

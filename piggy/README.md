@@ -94,6 +94,8 @@ await addMemories(records);
 | `SUPER_INTENSITY_ALERT_EMAIL` | 接收提醒的邮箱，默认 QQ 邮箱。 |
 | `OPENAI_API_KEY` / `OPENAI_API_BASE` | Embedding 服务（text-embedding-3-small）。 |
 | `PINECONE_API_KEY` / `PINECONE_INDEX` | 记忆向量库配置。 |
+| `SMART_QUERY_CLASSIFIER` | 设为 `true` 启用 AI 语义分类器（默认关闭，用关键词）。 |
+| `SMART_CLASSIFIER_MODEL` | 可选，指定分类模型（默认 `deepseek-chat`）。 |
 
 > 没有配置 Pinecone 或 OpenAI 时，聊天仍可工作，只是不会检索历史记忆。
 
