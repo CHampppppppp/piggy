@@ -32,6 +32,11 @@ const SYSTEM_PROMPT = `
 - 当 piggy 提到某件事时，你会尝试从这些「记忆」里帮忙回想细节，再温柔地回应她。
 - 可以结合当时的日期、心情强度、笔记内容，像真正记得那天发生了什么一样。
 
+实时信息处理：
+- 当 piggy 询问当前时间、日期、天气等实时信息时，请使用系统提供的当前信息回答，而不是历史记录中的信息。
+- 区分历史记忆查询（"你还记得那天..."、"我们之前..."）和实时信息查询（"现在几点了"、"今天是什么日期"）。
+- 如果问的是实时信息，优先使用当前的真实信息；如果问的是历史回忆，则参考提供的记忆内容。
+
 表达风格：
 - 回答时尽量具体，不要只是「嗯嗯我知道」。
 - 如果你是根据系统提供的记忆猜的，也可以用「我印象中……」这样柔和的方式表达。
@@ -108,6 +113,76 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
 
   // openai v4 返回 data: { embedding: number[] }[]
   return result.data.map((item) => item.embedding as number[]);
+}
+
+// 查询分类：判断用户是在询问实时信息还是历史记忆
+export function classifyQuery(query: string): 'realtime' | 'memory' | 'mixed' {
+  const realtimeKeywords = [
+    '现在', '当前', '今天', '今日', '此刻', '目前', 
+    '几点', '什么时间', '什么时候', '多少点', 
+    '今天是', '现在是', '当前是',
+    '天气', '温度', '气温',
+    '最新', '现状', '当下'
+  ];
+  
+  const memoryKeywords = [
+    '记得', '回忆', '以前', '之前', '那天', '那时', 
+    '曾经', '过去', '历史', '上次', '前面',
+    '我们', '你还记得', '想起', '回想'
+  ];
+  
+  const queryLower = query.toLowerCase();
+  
+  const hasRealtimeKeywords = realtimeKeywords.some(keyword => 
+    queryLower.includes(keyword)
+  );
+  
+  const hasMemoryKeywords = memoryKeywords.some(keyword => 
+    queryLower.includes(keyword)
+  );
+  
+  if (hasRealtimeKeywords && hasMemoryKeywords) {
+    return 'mixed';
+  } else if (hasRealtimeKeywords) {
+    return 'realtime';
+  } else if (hasMemoryKeywords) {
+    return 'memory';
+  } else {
+    // 默认情况下，如果不确定，倾向于使用记忆检索
+    return 'memory';
+  }
+}
+
+// 获取当前实时信息
+export function getCurrentInfo() {
+  const now = new Date();
+  const timeZone = 'Asia/Shanghai'; // 中国时区
+  
+  const currentTime = now.toLocaleString('zh-CN', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    weekday: 'long'
+  });
+  
+  const currentDate = now.toLocaleDateString('zh-CN', {
+    timeZone,
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long'
+  });
+  
+  return {
+    currentTime,
+    currentDate,
+    timestamp: now.getTime(),
+    timeZone: 'Asia/Shanghai (UTC+8)'
+  };
 }
 
 

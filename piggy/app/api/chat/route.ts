@@ -4,6 +4,8 @@ import {
   type ChatMessage,
   streamDeepseekChat,
   getSystemPrompt,
+  classifyQuery,
+  getCurrentInfo,
 } from '@/lib/llm';
 import { searchMemories } from '@/lib/vectorStore';
 
@@ -30,21 +32,55 @@ export async function POST(req: NextRequest) {
 
     const query = lastUserMessage?.content || '';
 
-    // RAG 检索记忆
+    // 分类查询类型并构建上下文
     let context = '';
     if (query.trim()) {
-      const memories = await searchMemories(query, 6);
-      if (memories.length > 0) {
-        const formatted = memories
-          .map((m) => {
-            const when = m.metadata.datetime;
-            const type = m.metadata.type;
-            const author = m.metadata.author;
-            return `【时间】${when}  【类型】${type}  【来自】${author}\n${m.text}`;
-          })
-          .join('\n\n---\n\n');
+      const queryType = classifyQuery(query);
+      const currentInfo = getCurrentInfo();
+      
+      // 总是提供当前时间信息，让AI知道现在的时间
+      let realtimeContext = `当前时间信息：
+- 现在是：${currentInfo.currentTime}
+- 今天是：${currentInfo.currentDate}
+- 时区：${currentInfo.timeZone}`;
 
-        context = `下面是你们之前的部分记忆，请在合适的时候自然地引用或参考：\n\n${formatted}`;
+      if (queryType === 'realtime') {
+        // 纯实时信息查询，不检索历史记忆
+        context = realtimeContext;
+      } else if (queryType === 'memory') {
+        // 纯历史记忆查询，检索相关记忆
+        const memories = await searchMemories(query, 6);
+        if (memories.length > 0) {
+          const formatted = memories
+            .map((m) => {
+              const when = m.metadata.datetime;
+              const type = m.metadata.type;
+              const author = m.metadata.author;
+              return `【时间】${when}  【类型】${type}  【来自】${author}\n${m.text}`;
+            })
+            .join('\n\n---\n\n');
+
+          context = `${realtimeContext}\n\n下面是你们之前的部分记忆，请在合适的时候自然地引用或参考：\n\n${formatted}`;
+        } else {
+          context = realtimeContext;
+        }
+      } else {
+        // 混合查询，同时提供实时信息和历史记忆
+        const memories = await searchMemories(query, 4); // 减少记忆数量，为实时信息留空间
+        if (memories.length > 0) {
+          const formatted = memories
+            .map((m) => {
+              const when = m.metadata.datetime;
+              const type = m.metadata.type;
+              const author = m.metadata.author;
+              return `【时间】${when}  【类型】${type}  【来自】${author}\n${m.text}`;
+            })
+            .join('\n\n---\n\n');
+
+          context = `${realtimeContext}\n\n下面是你们之前的部分记忆，请在合适的时候自然地引用或参考：\n\n${formatted}`;
+        } else {
+          context = realtimeContext;
+        }
       }
     }
 
