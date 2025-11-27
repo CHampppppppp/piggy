@@ -34,34 +34,34 @@ const SMALL_DECORATIONS = [
 
 // 角色头像配置（排除情绪图片：angry.jpg, annoy.jpg, happiness.jpg）
 const CHARACTER_AVATARS = [
-    { src: '/luffy.jpg', alt: 'Luffy' },
-    { src: '/luffy2.jpg', alt: 'Luffy' },
-    { src: '/zoro.jpg', alt: 'Zoro' },
-    { src: '/L.jpg', alt: 'L' },
-    { src: '/misa.jpg', alt: 'Misa' },
-    { src: '/akaza.jpg', alt: 'Akaza' },
-    { src: '/akaza2.jpg', alt: 'Akaza' },
-    { src: '/Kamado.jpg', alt: 'Kamado' },
-    { src: '/makima2.jpg', alt: 'Makima' },
-    { src: '/makima3.jpg', alt: 'Makima' },
-    { src: '/paiqiushaonian.jpg', alt: '排球少年' },
-    { src: '/paiqiushaonian2.jpg', alt: '排球少年' },
-    { src: '/wushan1.webp', alt: '巫山云海' },
-    { src: '/wushan2.avif', alt: '巫山云海' },
-    { src: '/wushan3.webp', alt: '巫山云海' },
+    { src: '/images/luffy.jpg', alt: 'Luffy' },
+    { src: '/images/luffy2.jpg', alt: 'Luffy' },
+    { src: '/images/zoro.jpg', alt: 'Zoro' },
+    { src: '/images/L.jpg', alt: 'L' },
+    { src: '/images/misa.jpg', alt: 'Misa' },
+    { src: '/images/akaza.jpg', alt: 'Akaza' },
+    { src: '/images/akaza2.jpg', alt: 'Akaza' },
+    { src: '/images/Kamado.jpg', alt: 'Kamado' },
+    { src: '/images/makima2.jpg', alt: 'Makima' },
+    { src: '/images/makima3.jpg', alt: 'Makima' },
+    { src: '/images/paiqiushaonian.jpg', alt: '排球少年' },
+    { src: '/images/paiqiushaonian2.jpg', alt: '排球少年' },
+    { src: '/images/wushan1.webp', alt: '巫山云海' },
+    { src: '/images/wushan2.avif', alt: '巫山云海' },
+    { src: '/images/wushan3.webp', alt: '巫山云海' },
 ];
 
 // 移动端只预加载两张Makima图片，桌面端加载所有图片
 const getPreloadImages = (isMobile: boolean) => {
     return isMobile 
         ? [
-            '/makima2.jpg', // DailyGreeting中的图片
-            '/makima3.jpg', // MoodDashboard中的图片
+            '/images/makima2.jpg', // DailyGreeting中的图片
+            '/images/makima3.jpg', // MoodDashboard中的图片
         ]
         : [
             ...CHARACTER_AVATARS.map(avatar => avatar.src),
-            '/makima2.jpg', // DailyGreeting中的图片
-            '/makima3.jpg', // MoodDashboard中的图片
+            '/images/makima2.jpg', // DailyGreeting中的图片
+            '/images/makima3.jpg', // MoodDashboard中的图片
         ];
 };
 
@@ -258,7 +258,7 @@ export default function LoginScreen() {
                 {/* Makima 贴画装饰 */}
                 <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full overflow-hidden border-4 border-black shadow-lg sticker-hover">
                     <Image
-                    src="/makima2.jpg"
+                    src="/images/makima2.jpg"
                     alt="Makima"
                     width={80}
                     height={80}

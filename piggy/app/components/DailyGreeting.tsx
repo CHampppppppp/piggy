@@ -113,7 +113,7 @@ export default function DailyGreeting() {
                 className="w-24 h-24 rounded-full overflow-hidden border-4 border-black mb-4 shadow-[4px_4px_0_#1a1a1a] sticker-hover"
               >
                 <Image 
-                  src="/makima2.jpg"
+                  src="/images/makima2.jpg"
                   alt="Makima"
                   width={96}
                   height={96}

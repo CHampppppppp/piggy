@@ -41,31 +41,31 @@ const SMALL_DECORATIONS = [
 
 // 角色头像配置（排除情绪图片：angry.jpg, annoy.jpg, happiness.jpg）
 const CHARACTER_AVATARS = [
-  { src: '/luffy.jpg', alt: 'Luffy' },
-  { src: '/luffy2.jpg', alt: 'Luffy' },
-  { src: '/zoro.jpg', alt: 'Zoro' },
-  { src: '/L.jpg', alt: 'L' },
-  { src: '/misa.jpg', alt: 'Misa' },
-  { src: '/akaza.jpg', alt: 'Akaza' },
-  { src: '/akaza2.jpg', alt: 'Akaza' },
-  { src: '/Kamado.jpg', alt: 'Kamado' },
-  { src: '/makima2.jpg', alt: 'Makima' },
-  { src: '/makima3.jpg', alt: 'Makima' },
-  { src: '/paiqiushaonian.jpg', alt: '排球少年' },
-  { src: '/paiqiushaonian2.jpg', alt: '排球少年' },
-  { src: '/wushan1.webp', alt: '巫山云海' },
-  { src: '/wushan2.avif', alt: '巫山云海' },
-  { src: '/wushan3.webp', alt: '巫山云海' },
-  { src: '/catty.jpg', alt: 'Catty' },
-  { src: '/kapibala.jpg', alt: 'Capybara' },
-  { src: '/kunomi.jpg', alt: 'Kunomi' },
-  { src: '/kunomi1.jpg', alt: 'Kunomi' },
-  { src: '/penguin.jpg', alt: 'Penguin' },
-  { src: '/zhangyu.jpg', alt: '章鱼' },
-  { src: '/fortnitecat1.jpg', alt: 'Fortnite Cat' },
-  { src: '/uno2.jpg', alt: 'Uno2' },
-  { src: '/uno1.jpg', alt: 'Uno1' },
-  { src: '/xiaohon.jpg', alt: '小红' }
+  { src: '/images/luffy.jpg', alt: 'Luffy' },
+  { src: '/images/luffy2.jpg', alt: 'Luffy' },
+  { src: '/images/zoro.jpg', alt: 'Zoro' },
+  { src: '/images/L.jpg', alt: 'L' },
+  { src: '/images/misa.jpg', alt: 'Misa' },
+  { src: '/images/akaza.jpg', alt: 'Akaza' },
+  { src: '/images/akaza2.jpg', alt: 'Akaza' },
+  { src: '/images/Kamado.jpg', alt: 'Kamado' },
+  { src: '/images/makima2.jpg', alt: 'Makima' },
+  { src: '/images/makima3.jpg', alt: 'Makima' },
+  { src: '/images/paiqiushaonian.jpg', alt: '排球少年' },
+  { src: '/images/paiqiushaonian2.jpg', alt: '排球少年' },
+  { src: '/images/wushan1.webp', alt: '巫山云海' },
+  { src: '/images/wushan2.avif', alt: '巫山云海' },
+  { src: '/images/wushan3.webp', alt: '巫山云海' },
+  { src: '/images/catty.jpg', alt: 'Catty' },
+  { src: '/images/kapibala.jpg', alt: 'Capybara' },
+  { src: '/images/kunomi.jpg', alt: 'Kunomi' },
+  { src: '/images/kunomi1.jpg', alt: 'Kunomi' },
+  { src: '/images/penguin.jpg', alt: 'Penguin' },
+  { src: '/images/zhangyu.jpg', alt: '章鱼' },
+  { src: '/images/fortnitecat1.jpg', alt: 'Fortnite Cat' },
+  { src: '/images/uno2.jpg', alt: 'Uno2' },
+  { src: '/images/uno1.jpg', alt: 'Uno1' },
+  { src: '/images/xiaohon.jpg', alt: '小红' }
 ];
 
 const PERIOD_DURATION_DAYS = 7;
@@ -563,7 +563,7 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
             {/* 左上角Makima贴画 */}
             <div className="absolute left-4 top-6 w-14 h-14 rounded-full overflow-hidden border-3 border-black sticker-hover">
               <Image
-                src="/makima3.jpg"
+                src="/images/makima3.jpg"
                 alt="Makima"
                 width={56}
                 height={56}

@@ -134,7 +134,7 @@ function ChatWidget() {
       >
         <div className="relative h-16 w-16 overflow-hidden rounded-full border border-black md:h-24 md:w-24">
           <Image
-            src="/L.png"
+            src="/images/L.png"
             alt="Champ 头像"
             fill
             sizes="(max-width: 768px) 64px, 96px"
@@ -150,7 +150,7 @@ function ChatWidget() {
             <div className="flex items-center gap-2">
               <div className="relative h-7 w-7 overflow-hidden rounded-full border border-black">
                 <Image
-                  src="/L.png"
+                  src="/images/L.png"
                   alt="Champ 头像"
                   fill
                   sizes="28px"

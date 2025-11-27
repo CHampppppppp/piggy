@@ -9,12 +9,12 @@ import { Droplet } from 'lucide-react';
 import { HeartSticker, PawSticker } from './KawaiiStickers';
 
 export const MOODS = [
-  { label: '开心', emoji: '😊', value: 'happy', image: '/happy.jpg' },
-  { label: '幸福', emoji: '🥰', value: 'blissful', image: '/happiness.jpg' },
-  { label: '累', emoji: '😴', value: 'tired', image: '/tired.jpg' },
-  { label: '烦躁', emoji: '😫', value: 'annoyed', image: '/annoy.jpg' },
-  { label: '生气', emoji: '😠', value: 'angry', image: '/angry.jpg' },
-  { label: '沮丧', emoji: '😔', value: 'depressed', image: '/sad.jpg' },
+  { label: '开心', emoji: '😊', value: 'happy', image: '/images/happy.jpg' },
+  { label: '幸福', emoji: '🥰', value: 'blissful', image: '/images/happiness.jpg' },
+  { label: '累', emoji: '😴', value: 'tired', image: '/images/tired.jpg' },
+  { label: '烦躁', emoji: '😫', value: 'annoyed', image: '/images/annoy.jpg' },
+  { label: '生气', emoji: '😠', value: 'angry', image: '/images/angry.jpg' },
+  { label: '沮丧', emoji: '😔', value: 'depressed', image: '/images/sad.jpg' },
 ] as const;
 
 // 优化的心情按钮组件 - 漫画风格，更紧凑

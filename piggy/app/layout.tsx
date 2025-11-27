@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Kawaii Mood Diary 🐱",
   description: "超可爱的心情日记本 ♡",
   icons: {
-    icon: "/heart.svg",
+    icon: "/images/heart.svg",
   },
 };
 
