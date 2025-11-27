@@ -7,12 +7,49 @@ import {
   classifyQuery,
   getCurrentInfo,
 } from '@/lib/llm';
-import { searchMemories } from '@/lib/vectorStore';
+import { searchMemories, addMemories, type MemoryRecord } from '@/lib/vectorStore';
 
 type ApiChatMessage = {
   role: 'user' | 'assistant';
   content: string;
 };
+
+const MEMORY_REQUEST_KEYWORDS = [
+  '记住',
+  '记得',
+  '记一下',
+  '记好',
+  '记牢',
+  '别忘',
+  '不要忘',
+  '帮我记',
+  '帮忙记',
+  '记在心里',
+];
+
+function extractMemoryFromMessage(message: string): string | null {
+  const normalized = message?.trim();
+  if (!normalized) return null;
+
+  const hasCue = MEMORY_REQUEST_KEYWORDS.some((keyword) =>
+    normalized.includes(keyword)
+  );
+  if (!hasCue) return null;
+
+  let cleaned = normalized;
+  MEMORY_REQUEST_KEYWORDS.forEach((keyword) => {
+    cleaned = cleaned.replaceAll(keyword, '');
+  });
+
+  cleaned = cleaned.replace(/^(请|麻烦你|帮我|帮忙|要|记)/, '').trim();
+  cleaned = cleaned.replace(/^[，。.!?\s]+|[，。.!?\s]+$/g, '').trim();
+
+  if (cleaned.length < 6) {
+    return normalized;
+  }
+
+  return cleaned;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,6 +68,31 @@ export async function POST(req: NextRequest) {
       .find((m) => m.role === 'user');
 
     const query = lastUserMessage?.content || '';
+
+    // 如果用户明确让 Champ 记住某件事，把这段内容写入向量记忆
+    if (query.trim()) {
+      const memoryText = extractMemoryFromMessage(query);
+      if (memoryText) {
+        const now = new Date();
+        const memoryId = `chat-${now.getTime()}-${Math.random()
+          .toString(36)
+          .slice(2)}`;
+        const memory: MemoryRecord = {
+          id: memoryId,
+          text: `聊天提醒：${memoryText}`,
+          metadata: {
+            type: 'note',
+            author: 'piggy',
+            datetime: now.toISOString(),
+            sourceId: memoryId,
+          },
+        };
+
+        addMemories([memory]).catch((err) => {
+          console.error('[api/chat] Failed to store chat memory', err);
+        });
+      }
+    }
 
     // 分类查询类型并构建上下文
     let context = '';

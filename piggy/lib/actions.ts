@@ -8,6 +8,24 @@ import { sendSuperMoodAlert } from './email';
 import { addMemories, type MemoryRecord } from './vectorStore';
 export type { Mood, Period } from './types';
 
+let dateKeyColumnEnsured = false;
+
+async function ensureDateKeyColumn() {
+  if (dateKeyColumnEnsured) return;
+  try {
+    const { rows } = await pool.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_name = 'moods' AND column_name = 'date_key' LIMIT 1"
+    );
+    if (!rows || rows.length === 0) {
+      await pool.query('ALTER TABLE moods ADD COLUMN date_key VARCHAR(20)');
+    }
+  } catch (err) {
+    console.warn('[actions] Failed to ensure date_key column exists', err);
+  } finally {
+    dateKeyColumnEnsured = true;
+  }
+}
+
 // 保存心情记录
 // Save mood record
 export async function saveMood(formData: FormData) {
@@ -22,6 +40,7 @@ export async function saveMood(formData: FormData) {
 
   const now = new Date();
   const datetime = now.toISOString();
+  await ensureDateKeyColumn();
 
   if (id) {
     // 更新现有记录
