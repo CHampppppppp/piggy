@@ -129,17 +129,23 @@ function ChatWidget() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-5 right-5 z-40 flex h-28 w-28 items-center justify-center rounded-full border-2 border-black bg-white shadow-[3px_3px_0_#1a1a1a] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1a1a1a] transition-all cursor-pointer"
+        className="fixed bottom-5 right-5 z-40 flex h-20 w-20 items-center justify-center rounded-full border-2 border-black bg-white shadow-[3px_3px_0_#1a1a1a] hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#1a1a1a] transition-all cursor-pointer md:h-28 md:w-28"
         aria-label="和 Champ 聊聊"
       >
-        <div className="relative h-24 w-24 overflow-hidden rounded-full border border-black">
-          <Image src="/L.png" alt="Champ 头像" fill sizes="96px" className="object-cover" />
+        <div className="relative h-16 w-16 overflow-hidden rounded-full border border-black md:h-24 md:w-24">
+          <Image
+            src="/L.png"
+            alt="Champ 头像"
+            fill
+            sizes="(max-width: 768px) 64px, 96px"
+            className="object-cover"
+          />
         </div>
       </button>
 
       {/* 聊天面板 */}
       {open && (
-        <div className="fixed bottom-28 right-6 z-40 w-[26rem] max-w-[95vw] h-[32rem] rounded-2xl border-2 border-black bg-[#fff9fb] shadow-[4px_4px_0_#1a1a1a] flex flex-col overflow-hidden">
+        <div className="fixed bottom-28 right-3 md:right-6 z-40 w-[26rem] max-w-[95vw] h-[32rem] rounded-2xl border-2 border-black bg-[#fff9fb] shadow-[4px_4px_0_#1a1a1a] flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b-2 border-black bg-[#ffd6e7]">
             <div className="flex items-center gap-2">
               <div className="relative h-7 w-7 overflow-hidden rounded-full border border-black">
