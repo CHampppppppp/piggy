@@ -84,11 +84,24 @@ export async function saveMood(formData: FormData) {
     );
 
     // 如果是经期开始，保存经期记录
-    // 这样可以追踪经期周期，用于预测
+    // 使用前端传入的 date_key 来构造日期，避免时区问题
+    // 如果 date_key 不存在，则使用当前日期（作为后备方案）
     if (isPeriodStart) {
+      let periodDate: Date;
+      if (dateKey) {
+        // 使用 date_key (格式: YYYY-MM-DD) 构造日期
+        // 设置为当地时间的 00:00:00，避免时区转换问题
+        const [year, month, day] = dateKey.split('-').map(Number);
+        periodDate = new Date(year, month - 1, day);
+      } else {
+        // 后备方案：使用当前日期（服务器时区）
+        periodDate = new Date();
+        periodDate.setHours(0, 0, 0, 0);
+      }
+      
       await pool.query(
         'INSERT INTO periods (start_date) VALUES (?)',
-        [new Date()]
+        [periodDate]
       );
     }
   }
