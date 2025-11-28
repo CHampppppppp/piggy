@@ -105,6 +105,7 @@ PINECONE_INDEX=自己取名
 # CHROMA_URL=http://localhost:8000
 
 # 接收邮箱配置（需要开启邮箱的 SMTP 服务，自行搜索）
+SUPER_INTENSITY_ALERT_EMAIL=qq号@qq.com
 SMTP_URL=smtps://qq号@qq.com:smtp密钥@smtp.qq.com:465
 SMTP_FROM=qq号@qq.com
 
