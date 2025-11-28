@@ -6,8 +6,7 @@ type SuperMoodPayload = {
   isUpdate: boolean;
 };
 
-const ALERT_EMAIL_TO =
-  process.env.SUPER_INTENSITY_ALERT_EMAIL ?? '2681158691@qq.com';
+const ALERT_EMAIL_TO = process.env.SUPER_INTENSITY_ALERT_EMAIL;
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -82,7 +81,15 @@ function getTransporter() {
 
 export async function sendSuperMoodAlert(payload: SuperMoodPayload) {
   const mailer = getTransporter();
-  if (!mailer) return;
+  if (!mailer) {
+    console.warn('[email] SMTP transporter not available, skipping alert email');
+    return;
+  }
+
+  if (!ALERT_EMAIL_TO) {
+    console.warn('[email] SUPER_INTENSITY_ALERT_EMAIL not configured, skipping alert email');
+    return;
+  }
 
   const subjectPrefix = payload.isUpdate ? '更新' : '新建';
   const smtpUser = process.env.SMTP_USER!;

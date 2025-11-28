@@ -31,20 +31,6 @@
 - 后端：Next.js Server Actions + Route Handlers、MySQL（默认）与 Neon/Postgres 双引擎、Pinecone、OpenAI Embedding、DeepSeek Chat API。
 - 其它：Nodemailer 邮件告警、date-fns 时间处理、PWA 风格贴纸组件系统。
 
-## 环境变量（如果部署到vercel，还需要在vercel控制台里配置）
-- DATABASE_URL
-- GIRLFRIEND_PASSWORD
-- DEEPSEEK_API_KEY
-- SMTP_URL
-- SMTP_FROM
-- SMART_QUERY_CLASSIFIER
-> 以下是RAG功能所需变量，没有配置时，聊天仍可工作，只是没有记忆功能。
-- OPENAI_API_KEY
-- OPENAI_BASE_URL
-- PINECONE_API_KEY
-- PINECONE_INDEX
-- CHROMA_URL（可选）
-
 ## 快速开始
 
 1. **准备运行环境**  
@@ -60,7 +46,7 @@
 3. **初始化数据库**  
    - 在目标库执行 `migrations/` 里的 SQL（分为psql版本和mysql版本）。  
    - 创建 `moods`, `periods`, `login_logs`, `account_locks` 等表。
-4. **配置 `.env.local`**
+4. **配置 `.env.local`** (如果部署vercel，还需要在vercel控制台里配置)
 
 ```ini
  # neon 云数据库（neon云数据库会给一个密钥类似于：）

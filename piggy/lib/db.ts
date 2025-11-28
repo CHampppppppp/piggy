@@ -23,8 +23,12 @@ let query: QueryFn;
 if (DB_CLIENT === 'mysql') {
   const MYSQL_HOST = process.env.MYSQL_HOST || 'localhost';
   const MYSQL_USER = process.env.MYSQL_USER || 'root';
-  const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || '123456';
+  const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD;
   const MYSQL_DATABASE = process.env.MYSQL_DATABASE || 'piggy_diary';
+
+  if (!MYSQL_PASSWORD) {
+    throw new Error('MYSQL_PASSWORD environment variable is required for MySQL connection');
+  }
 
   if (!MYSQL_DATABASE) {
     throw new Error('MySQL database name is not configured');
