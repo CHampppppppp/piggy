@@ -30,7 +30,7 @@ const SMART_CLASSIFIER_ENABLED =
 const SMART_CLASSIFIER_MODEL =
   process.env.SMART_CLASSIFIER_MODEL || 'deepseek-chat';
 
-// Champ 的基础人设提示词
+// 男朋友的基础人设提示词（这里champ是作者，修改成你自己即可）
 const SYSTEM_PROMPT = `
 你是 Champ，是 Piggy 的男朋友，也是这个可爱心情网站的作者。
 
@@ -224,6 +224,7 @@ const CLASSIFIER_SYSTEM_PROMPT = `
 
 无论用户说什么，你只能回应 realtime、memory 或 mixed，不要输出其它文字。`.trim();
 
+// few shot 训练
 const CLASSIFIER_FEW_SHOTS: ChatMessage[] = [
   { role: 'user', content: '现在几点啦' },
   { role: 'assistant', content: 'realtime' },
@@ -267,7 +268,7 @@ function classifyByKeywords(query: string): QueryType {
   if (hasMemory) {
     return 'memory';
   }
-  return 'memory'; // 默认返回 memory，保守策略
+  return 'mixed'; // 默认返回 mixed，保守策略
 }
 
 /**
@@ -330,14 +331,14 @@ async function classifyWithLLM(query: string): Promise<QueryType | null> {
  * @returns 查询类型：'realtime' | 'memory' | 'mixed'
  * 
  * 分类策略：
- * 1. 如果查询为空，默认返回 'memory'（保守策略）
+ * 1. 如果查询为空，默认返回 'mixed'（保守策略）
  * 2. 尝试使用 LLM 智能分类
  * 3. 如果 LLM 分类失败，使用关键词匹配作为后备
  */
 export async function classifyQuery(query: string): Promise<QueryType> {
   const trimmed = (query || '').trim();
   if (!trimmed) {
-    return 'memory'; // 空查询默认返回 memory
+    return 'mixed'; // 空查询默认返回 mixed
   }
 
   // 优先使用智能分类器
