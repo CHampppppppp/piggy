@@ -11,13 +11,13 @@ type UiMessage = {
 };
 
 const STICKER_MAP: Record<string, string> = {
-  happy: '/images/happy.jpg',
-  love: '/images/happiness.jpg',
-  sad: '/images/sad.jpg',
-  angry: '/images/angry.jpg',
-  tired: '/images/tired.jpg',
-  excited: '/images/fortnitecat1.jpg',
-  neutral: '/images/penguin.jpg',
+  happy: '/images/happy.webp',
+  love: '/images/happiness.webp',
+  sad: '/images/sad.webp',
+  angry: '/images/angry.webp',
+  tired: '/images/tired.webp',
+  excited: '/images/fortnitecat1.webp',
+  neutral: '/images/penguin.webp',
 };
 
 // localStorage 键名
@@ -394,7 +394,7 @@ function ChatWidget() {
       >
         <div className="relative h-16 w-16 overflow-hidden rounded-full border border-black md:h-24 md:w-24">
           <Image
-            src="/images/L.png"
+            src="/images/L.webp"
             alt="Champ 头像"
             fill
             sizes="(max-width: 768px) 64px, 96px"
@@ -410,7 +410,7 @@ function ChatWidget() {
             <div className="flex items-center gap-2">
               <div className="relative h-7 w-7 overflow-hidden rounded-full border border-black">
                 <Image
-                  src="/images/L.png"
+                  src="/images/L.webp"
                   alt="Champ 头像"
                   fill
                   sizes="28px"
@@ -425,9 +425,9 @@ function ChatWidget() {
                   type="button"
                   onClick={clearConversation}
                   className="text-xs font-bold px-2 py-1 rounded-lg border border-black bg-white hover:bg-gray-100 transition-colors"
-                  title="新建对话"
+                  title="换个话题"
                 >
-                  新建对话
+                  换个话题
                 </button>
               )}
               <button

@@ -41,31 +41,31 @@ const SMALL_DECORATIONS = [
 
 // 角色头像配置（排除情绪图片：angry.jpg, annoy.jpg, happiness.jpg）
 const CHARACTER_AVATARS = [
-  { src: '/images/luffy.jpg', alt: 'Luffy' },
-  { src: '/images/luffy2.jpg', alt: 'Luffy' },
-  { src: '/images/zoro.jpg', alt: 'Zoro' },
-  { src: '/images/L.jpg', alt: 'L' },
-  { src: '/images/misa.jpg', alt: 'Misa' },
-  { src: '/images/akaza.jpg', alt: 'Akaza' },
-  { src: '/images/akaza2.jpg', alt: 'Akaza' },
-  { src: '/images/Kamado.jpg', alt: 'Kamado' },
-  { src: '/images/makima2.jpg', alt: 'Makima' },
-  { src: '/images/makima3.jpg', alt: 'Makima' },
-  { src: '/images/paiqiushaonian.jpg', alt: '排球少年' },
-  { src: '/images/paiqiushaonian2.jpg', alt: '排球少年' },
+  { src: '/images/luffy.webp', alt: 'Luffy' },
+  { src: '/images/luffy2.webp', alt: 'Luffy' },
+  { src: '/images/zoro.webp', alt: 'Zoro' },
+  { src: '/images/L.webp', alt: 'L' },
+  { src: '/images/misa.webp', alt: 'Misa' },
+  { src: '/images/akaza.webp', alt: 'Akaza' },
+  { src: '/images/akaza2.webp', alt: 'Akaza' },
+  { src: '/images/Kamado.webp', alt: 'Kamado' },
+  { src: '/images/makima2.webp', alt: 'Makima' },
+  { src: '/images/makima3.webp', alt: 'Makima' },
+  { src: '/images/paiqiushaonian.webp', alt: '排球少年' },
+  { src: '/images/paiqiushaonian2.webp', alt: '排球少年' },
   { src: '/images/wushan1.webp', alt: '巫山云海' },
   { src: '/images/wushan2.avif', alt: '巫山云海' },
   { src: '/images/wushan3.webp', alt: '巫山云海' },
-  { src: '/images/catty.jpg', alt: 'Catty' },
-  { src: '/images/kapibala.jpg', alt: 'Capybara' },
-  { src: '/images/kunomi.jpg', alt: 'Kunomi' },
-  { src: '/images/kunomi1.jpg', alt: 'Kunomi' },
-  { src: '/images/penguin.jpg', alt: 'Penguin' },
-  { src: '/images/zhangyu.jpg', alt: '章鱼' },
-  { src: '/images/fortnitecat1.jpg', alt: 'Fortnite Cat' },
-  { src: '/images/uno2.jpg', alt: 'Uno2' },
-  { src: '/images/uno1.jpg', alt: 'Uno1' },
-  { src: '/images/xiaohon.jpg', alt: '小红' }
+  { src: '/images/catty.webp', alt: 'Catty' },
+  { src: '/images/kapibala.webp', alt: 'Capybara' },
+  { src: '/images/kunomi.webp', alt: 'Kunomi' },
+  { src: '/images/kunomi1.webp', alt: 'Kunomi' },
+  { src: '/images/penguin.webp', alt: 'Penguin' },
+  { src: '/images/zhangyu.webp', alt: '章鱼' },
+  { src: '/images/fortnitecat1.webp', alt: 'Fortnite Cat' },
+  { src: '/images/uno2.webp', alt: 'Uno2' },
+  { src: '/images/uno1.webp', alt: 'Uno1' },
+  { src: '/images/xiaohon.webp', alt: '小红' }
 ];
 
 // ==================== 经期周期预测相关常量 ====================
@@ -722,7 +722,7 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
             {/* 左上角Makima贴画 */}
             <div className="absolute left-4 top-6 w-14 h-14 rounded-full overflow-hidden border-3 border-black sticker-hover">
               <Image
-                src="/images/makima3.jpg"
+                src="/images/makima3.webp"
                 alt="Makima"
                 width={56}
                 height={56}

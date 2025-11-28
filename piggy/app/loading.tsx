@@ -22,7 +22,7 @@ export default function Loading() {
 
         <div className="relative w-32 h-32 rounded-full border-4 border-black overflow-hidden animate-bounce shadow-[4px_4px_0_#1a1a1a]">
           <Image
-            src="/images/kunomi.jpg"
+            src="/images/kunomi.webp"
             alt="Kuromi"
             fill
             className="object-cover"
