@@ -195,7 +195,7 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1.5 p-2 flex-1 overflow-y-auto content-start">
+      <div className="grid grid-cols-7 gap-1.5 p-2 flex-1 content-start">
         {/* 上个月的空位 */}
         {emptyDays.map((_, i) => (
           <div key={`empty-${i}`} />
