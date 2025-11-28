@@ -317,9 +317,9 @@ async function classifyWithLLM(query: string): Promise<QueryType | null> {
     return null;
   }
 
+  const startTime = Date.now(); // 在 try 块外声明，确保 catch 块可以访问
   try {
     console.log(`[llm/classifier] 使用智能分类器 (模型: ${SMART_CLASSIFIER_MODEL})`);
-    const startTime = Date.now();
     const completion = await deepseekClient.chat.completions.create({
       model: SMART_CLASSIFIER_MODEL,
       max_tokens: 4, // 只需要返回一个词，限制 token 数量
