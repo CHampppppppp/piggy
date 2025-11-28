@@ -80,6 +80,9 @@ SMTP_FROM=qq号@qq.com
 
 # 利用ai进行语义判断（是要采用rag还是正常聊天）
 SMART_QUERY_CLASSIFIER=true（或者false）
+
+# CRON Job（每日定期执行某些任务，这里是检查经期）
+CRON_SECRET="这个值自己随便取"
 ```
 
 5. **启动开发服务器**
