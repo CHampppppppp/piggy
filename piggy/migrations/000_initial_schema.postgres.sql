@@ -91,3 +91,4 @@ CREATE INDEX IF NOT EXISTS idx_login_logs_logged_in_at ON login_logs (logged_in_
 -- - COMMENT ON: PostgreSQL 使用单独的语句添加注释
 -- - CREATE INDEX IF NOT EXISTS: PostgreSQL 支持此语法（9.5+）
 
+
