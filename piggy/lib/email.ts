@@ -122,3 +122,38 @@ export async function sendSuperMoodAlert(payload: SuperMoodPayload) {
   });
 }
 
+export async function sendPeriodAlert(nextPeriodDate: string, daysUntil: number) {
+  const mailer = getTransporter();
+  if (!mailer) {
+    console.warn('[email] SMTP transporter not available, skipping period alert email');
+    return;
+  }
+
+  const targetEmail = ALERT_EMAIL_TO;
+  if (!targetEmail) {
+    console.warn('[email] PERIOD_ALERT_EMAIL/SUPER_INTENSITY_ALERT_EMAIL not configured, skipping period alert email');
+    return;
+  }
+
+  const smtpUser = process.env.SMTP_USER!;
+  const customFrom = process.env.SMTP_FROM;
+
+  const validFrom =
+    customFrom &&
+    (/@/.test(customFrom) || /<[^>]+@[^>]+>/.test(customFrom))
+      ? customFrom
+      : smtpUser;
+
+  const subject = `经期预警`;
+  const text = `
+根据记录预测，piggy的生理期可能会在 ${daysUntil} 天后（${nextPeriodDate}）到来。
+  `.trim();
+
+  await mailer.sendMail({
+    from: validFrom,
+    to: targetEmail,
+    subject,
+    text,
+  });
+}
+

@@ -68,24 +68,41 @@ const CHARACTER_AVATARS = [
   { src: '/images/xiaohon.jpg', alt: '小红' }
 ];
 
-const PERIOD_DURATION_DAYS = 7;
-const DEFAULT_CYCLE_DAYS = 28;
-const MIN_CYCLE_DAYS = 21;
-const MAX_CYCLE_DAYS = 35;
-const PREDICTION_HORIZON_DAYS = 180;
+// ==================== 经期周期预测相关常量 ====================
+const PERIOD_DURATION_DAYS = 7; // 每次经期持续天数
+const DEFAULT_CYCLE_DAYS = 28; // 默认周期天数（如果历史记录不足）
+const MIN_CYCLE_DAYS = 21; // 最短周期天数（防止异常值）
+const MAX_CYCLE_DAYS = 35; // 最长周期天数（防止异常值）
+const PREDICTION_HORIZON_DAYS = 180; // 预测未来多少天的经期
 
 type PeriodStatus = Record<string, 'actual' | 'predicted'>;
 
+/**
+ * 将日期转换为 YYYY-MM-DD 格式的字符串键
+ * 用于在对象中快速查找某一天的状态
+ */
 const toDateKey = (date: Date) => {
   return date.toISOString().split('T')[0];
 };
 
+/**
+ * 标准化日期：将时间部分清零，只保留日期
+ * 避免时区问题导致日期判断错误
+ */
 const normalizeDate = (date: Date) => {
   const normalized = new Date(date);
   normalized.setHours(0, 0, 0, 0);
   return normalized;
 };
 
+/**
+ * 将一段连续日期标记为经期（实际记录或预测）
+ * @param status - 状态对象，用于存储每一天的经期状态
+ * @param start - 经期开始日期
+ * @param type - 'actual' 表示实际记录的经期，'predicted' 表示预测的经期
+ * 
+ * 注意：实际记录的优先级高于预测，如果某天已有实际记录，不会被预测覆盖
+ */
 function addPeriodInterval(status: PeriodStatus, start: Date, type: 'actual' | 'predicted') {
   for (let i = 0; i < PERIOD_DURATION_DAYS; i++) {
     const current = addDays(start, i);
@@ -96,6 +113,17 @@ function addPeriodInterval(status: PeriodStatus, start: Date, type: 'actual' | '
   }
 }
 
+/**
+ * 根据历史经期记录计算平均周期长度
+ * @param sortedPeriods - 按时间排序的经期记录数组
+ * @returns 计算出的周期天数（限制在 21-35 天之间）
+ * 
+ * 算法：
+ * 1. 如果记录少于2条，返回默认值 28 天
+ * 2. 计算相邻两次经期开始日期的间隔
+ * 3. 取所有间隔的平均值
+ * 4. 将结果限制在合理范围内（21-35 天）
+ */
 function calculateCycleLengthDays(sortedPeriods: Period[]) {
   if (sortedPeriods.length < 2) {
     return DEFAULT_CYCLE_DAYS;
@@ -119,25 +147,40 @@ function calculateCycleLengthDays(sortedPeriods: Period[]) {
   return Math.max(MIN_CYCLE_DAYS, Math.min(MAX_CYCLE_DAYS, avg));
 }
 
+/**
+ * 构建经期状态映射：包含实际记录和未来预测
+ * @param periods - 所有经期记录
+ * @returns 一个对象，键为日期（YYYY-MM-DD），值为 'actual' 或 'predicted'
+ * 
+ * 处理流程：
+ * 1. 将所有实际记录的经期日期标记为 'actual'
+ * 2. 根据历史数据计算平均周期长度
+ * 3. 从最后一次实际记录开始，按周期预测未来 180 天的经期
+ * 4. 将预测的日期标记为 'predicted'
+ */
 function buildPeriodStatus(periods: Period[]): PeriodStatus {
   const status: PeriodStatus = {};
   if (!periods.length) {
     return status;
   }
 
+  // 按时间排序，确保处理顺序正确
   const sorted = [...periods].sort(
     (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
   );
 
+  // 标记所有实际记录的经期日期
   sorted.forEach((period) => {
     const start = normalizeDate(new Date(period.start_date));
     addPeriodInterval(status, start, 'actual');
   });
 
+  // 计算周期长度并预测未来经期
   const cycleDays = calculateCycleLengthDays(sorted);
   const lastActualStart = normalizeDate(new Date(sorted[sorted.length - 1].start_date));
   const horizonEnd = addDays(startOfDay(new Date()), PREDICTION_HORIZON_DAYS);
 
+  // 从最后一次实际记录开始，按周期预测未来经期
   let nextStart = addDays(lastActualStart, cycleDays);
   while (nextStart <= horizonEnd) {
     addPeriodInterval(status, nextStart, 'predicted');
@@ -147,8 +190,23 @@ function buildPeriodStatus(periods: Period[]): PeriodStatus {
   return status;
 }
 
-// 生成不重叠的随机位置（针对 Dashboard 的边缘区域，考虑元素尺寸不超出视口）
-// maxElementSize: 元素最大尺寸（像素），用于计算安全边距
+/**
+ * 生成不重叠的随机位置（针对 Dashboard 的边缘区域，考虑元素尺寸不超出视口）
+ * 
+ * 这个函数用于在页面边缘区域（避开中心手机框架）随机分布装饰元素
+ * 
+ * @param count - 需要生成的位置数量
+ * @param maxElementSize - 元素最大尺寸（像素），用于计算安全边距，防止元素超出视口
+ * @param minDistanceOverride - 可选的最小间距百分比，如果不提供则使用默认值 14%
+ * @returns 位置数组，每个位置包含 top（百分比）、left（百分比）和 delay（动画延迟秒数）
+ * 
+ * 算法说明：
+ * 1. 将屏幕分为4个边缘区域：左、右、上、下，避开中心 25%-75% 的手机框架区域
+ * 2. 随机选择一个区域，在该区域内生成位置
+ * 3. 检查新位置与已有位置的距离，确保不重叠（使用欧几里得距离）
+ * 4. 如果尝试50次仍找不到合适位置，逐步降低最小距离要求
+ * 5. 如果最终仍无法找到合适位置，退化为网格分布，确保所有元素都能放置
+ */
 function generateRandomPositions(
   count: number,
   maxElementSize: number = 100,
@@ -157,6 +215,7 @@ function generateRandomPositions(
   const positions: { top: number; left: number; delay: number }[] = [];
   const baseMinDistance = minDistanceOverride ?? 14; // 最小间距百分比
   // 根据元素尺寸计算安全边距（假设视口约1000px，转换为百分比）
+  // 这样可以确保元素不会超出视口边界
   const safeMargin = Math.ceil(maxElementSize / 10); // 约等于元素尺寸的百分比
 
   for (let i = 0; i < count; i++) {
@@ -165,29 +224,30 @@ function generateRandomPositions(
     let top = 0, left = 0;
     let minDistance = baseMinDistance;
 
+    // 尝试找到不重叠的位置，最多尝试50次
     while (!validPosition && attempts < 50) {
       // 将屏幕分为边缘区域，避开中心手机框架区域，同时确保不超出视口
       const zone = Math.floor(Math.random() * 4); // 0:左 1:右 2:上 3:下
       switch (zone) {
-        case 0: // 左侧
+        case 0: // 左侧边缘区域（2%-17%）
           left = Math.random() * 15 + 2;
           top = Math.random() * (70 - safeMargin) + 10;
           break;
-        case 1: // 右侧（留出元素宽度的空间）
+        case 1: // 右侧边缘区域（75%-87%，留出元素宽度的空间）
           left = Math.random() * 12 + (75 - safeMargin);
           top = Math.random() * (70 - safeMargin) + 10;
           break;
-        case 2: // 顶部
+        case 2: // 顶部边缘区域（3%-13%）
           left = Math.random() * (45 - safeMargin) + 25;
           top = Math.random() * 10 + 3;
           break;
-        case 3: // 底部（留出元素高度的空间）
+        case 3: // 底部边缘区域（78%-86%，留出元素高度的空间）
           left = Math.random() * (45 - safeMargin) + 25;
           top = Math.random() * 8 + (78 - safeMargin);
           break;
       }
 
-      // 检查与已有位置的距离
+      // 检查与已有位置的距离，确保不重叠
       validPosition = positions.every(pos => {
         const distance = Math.sqrt(
           Math.pow(pos.left - left, 2) + Math.pow(pos.top - top, 2)
@@ -196,13 +256,16 @@ function generateRandomPositions(
       });
 
       attempts++;
+      // 每10次尝试后，如果还没找到合适位置，降低最小距离要求
+      // 这样可以避免在元素较多时完全无法放置
       if (attempts % 10 === 0 && minDistance > 6) {
         minDistance -= 2;
       }
     }
 
+    // 如果尝试50次仍找不到合适位置，退化为基于网格的分布
+    // 这样可以确保所有元素都能放置，避免完全重叠
     if (!validPosition) {
-      // 退化为基于网格的分布，避免完全重叠
       const gridSize = Math.ceil(Math.sqrt(count));
       const row = Math.floor(i / gridSize);
       const col = i % gridSize;
@@ -218,6 +281,21 @@ function generateRandomPositions(
   return positions;
 }
 
+/**
+ * 在屏幕左右两侧区域生成不重叠的随机位置
+ * 
+ * 这个函数专门用于角色头像的分布，将它们集中在左右两侧，避开中心区域
+ * 
+ * @param count - 需要生成的位置数量
+ * @param maxElementSize - 元素最大尺寸（像素），用于计算安全边距
+ * @returns 位置数组，每个位置包含 top、left 和 delay
+ * 
+ * 算法说明：
+ * 1. 定义左右两个矩形区域（leftBox 和 rightBox），避开中心 40%-60% 区域
+ * 2. 将元素数量平均分配到左右两侧（左侧向上取整）
+ * 3. 在每个区域内随机生成位置，确保不重叠
+ * 4. 如果随机生成失败，退化为网格分布，并在网格中心添加随机偏移
+ */
 function generateSideDistributedPositions(count: number, maxElementSize: number = 100) {
   const positions: { top: number; left: number; delay: number }[] = [];
   const safeMargin = Math.ceil(maxElementSize / 14);
@@ -225,22 +303,33 @@ function generateSideDistributedPositions(count: number, maxElementSize: number 
   const verticalMin = verticalPadding;
   const verticalMax = 100 - verticalPadding;
   const innerPadding = Math.max(6, safeMargin);
+
+  // 定义左侧区域：4% - (40% - innerPadding)
   const leftBox = {
     top: verticalMin,
     bottom: verticalMax,
     left: 4,
     right: 40 - innerPadding,
   };
+  // 定义右侧区域：(60% + innerPadding) - 96%
   const rightBox = {
     top: verticalMin,
     bottom: verticalMax,
     left: 60 + innerPadding,
     right: 96,
   };
+
+  // 将元素平均分配到左右两侧
   const leftCount = Math.ceil(count / 2);
   const rightCount = count - leftCount;
+  // 根据可用垂直空间动态计算最小距离
   const minDistance = Math.max(10, 0.12 * (verticalMax - verticalMin));
 
+  /**
+   * 在指定矩形区域内生成不重叠的位置
+   * @param sideCount - 该侧需要放置的元素数量
+   * @param box - 矩形区域的边界（top, bottom, left, right）
+   */
   const sampleInBox = (
     sideCount: number,
     box: { top: number; bottom: number; left: number; right: number }
@@ -252,14 +341,17 @@ function generateSideDistributedPositions(count: number, maxElementSize: number 
 
     const width = box.right - box.left;
     const height = box.bottom - box.top;
+    // 计算网格的行列数，用于后备方案
     const fallbackCols = Math.max(1, Math.round(Math.sqrt(sideCount)));
     const fallbackRows = Math.max(1, Math.ceil(sideCount / fallbackCols));
 
     for (let i = 0; i < sideCount; i++) {
       let placed = false;
+      // 尝试随机生成位置，最多尝试60次
       for (let attempt = 0; attempt < 60 && !placed; attempt++) {
         const top = Math.random() * height + box.top;
         const left = Math.random() * width + box.left;
+        // 检查是否与已有位置重叠
         const fits = sidePositions.every(pos => {
           const distance = Math.hypot(pos.left - left, pos.top - top);
           return distance >= minDistance;
@@ -270,15 +362,18 @@ function generateSideDistributedPositions(count: number, maxElementSize: number 
         }
       }
 
+      // 如果随机生成失败，使用网格分布作为后备方案
       if (!placed) {
         const row = Math.floor(i / fallbackCols);
         const col = i % fallbackCols;
         const cellWidth = width / fallbackCols;
         const cellHeight = height / fallbackRows;
+        // 在网格中心添加随机偏移（±20%），使分布更自然
         const top =
           box.top + row * cellHeight + cellHeight / 2 + (Math.random() - 0.5) * cellHeight * 0.4;
         const left =
           box.left + col * cellWidth + cellWidth / 2 + (Math.random() - 0.5) * cellWidth * 0.4;
+        // 确保位置在边界内
         sidePositions.push({
           top: Math.min(box.bottom, Math.max(box.top, top)),
           left: Math.min(box.right, Math.max(box.left, left)),
@@ -290,30 +385,53 @@ function generateSideDistributedPositions(count: number, maxElementSize: number 
     positions.push(...sidePositions);
   };
 
+  // 分别在左右两侧生成位置
   sampleInBox(leftCount, leftBox);
   sampleInBox(rightCount, rightBox);
 
   return positions;
 }
 
-// 随机选择数组中的元素
+/**
+ * 随机选择数组中的元素
+ * @param array - 源数组
+ * @param count - 需要选择的数量
+ * @returns 随机选择后的数组切片
+ */
 function shuffleAndPick<T>(array: T[], count: number): T[] {
   const shuffled = [...array].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 }
 
-// 生成随机大小
+/**
+ * 生成指定范围内的随机整数大小
+ * @param min - 最小值
+ * @param max - 最大值
+ * @returns 随机整数
+ */
 function randomSize(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/**
+ * 根据屏幕宽度返回应该显示的角色头像数量
+ * 响应式设计：屏幕越大，显示的头像越多
+ * @param width - 屏幕宽度（像素）
+ * @returns 头像数量
+ */
 function getResponsiveAvatarCount(width: number) {
-  if (width < 640) return 0;
-  if (width < 1024) return 5;
-  if (width < 1440) return 13;
-  return 21;
+  if (width < 640) return 0;      // 手机：不显示
+  if (width < 1024) return 5;     // 平板：5个
+  if (width < 1440) return 13;    // 小桌面：13个
+  return 21;                       // 大桌面：21个
 }
 
+/**
+ * 根据头像数量返回最小间距
+ * 头像越多，间距越小，避免过于拥挤
+ * @param count - 头像数量
+ * @returns 最小间距百分比
+ */
 function getAvatarMinDistance(count: number) {
   if (count <= 6) return 18;
   if (count <= 12) return 14;
@@ -321,8 +439,19 @@ function getAvatarMinDistance(count: number) {
   return 10;
 }
 
+/**
+ * 创建随机装饰配置
+ * 
+ * 这个函数会随机生成三种类型的装饰：
+ * 1. 动物贴纸：7-9个，分布在页面边缘
+ * 2. 小装饰：3-5个，分布在页面边缘
+ * 3. 角色头像：根据屏幕尺寸决定数量，分布在左右两侧
+ * 
+ * @param avatarCount - 可选的头像数量，如果不提供则根据屏幕尺寸自动计算
+ * @returns 包含所有装饰配置的对象
+ */
 function createRandomDecorations(avatarCount?: number) {
-  // 随机选择 7-9 个动物（最大尺寸约95px）
+  // 随机选择 7-9 个动物贴纸（最大尺寸约95px）
   const animalCount = Math.floor(Math.random() * 3) + 7;
   const selectedAnimals = shuffleAndPick(ANIMAL_STICKERS, animalCount);
   const animalPositions = generateRandomPositions(animalCount, 100);
@@ -395,7 +524,12 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingMood, setEditingMood] = useState<Mood | null>(null);
   const [randomDecorations, setRandomDecorations] = useState<ReturnType<typeof createRandomDecorations> | null>(null);
+  // 构建经期状态映射（包含实际记录和未来预测）
+  // 使用 useMemo 避免每次渲染都重新计算
   const periodStatus = useMemo(() => buildPeriodStatus(periods), [periods]);
+
+  // 找到最新的心情记录
+  // 使用 useMemo 避免每次渲染都重新查找
   const latestMood = useMemo(
     () =>
       moods.length
@@ -408,26 +542,45 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
     [moods]
   );
 
-  // 使用浏览器本地时间判断"今天是否已经记录过"，避免受服务端 / 数据库时区影响
+  /**
+   * 判断今天是否已经记录过心情
+   * 
+   * 使用浏览器本地时间判断，避免受服务端/数据库时区影响
+   * 这样可以确保无论用户在哪个时区，都能正确判断"今天"是否已记录
+   * 
+   * 匹配逻辑：
+   * 1. 优先使用 mood.date_key（如果存在，这是前端保存时生成的）
+   * 2. 如果没有 date_key，则从 created_at 解析日期
+   * 3. 将日期格式化为 YYYY-MM-DD 格式进行比较
+   */
   const hasTodayMood = useMemo(() => {
     if (!moods.length) return false;
-    const todayKey = new Date().toLocaleDateString('zh-CN', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
+    const todayKey = new Date().toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
     }).replace(/\//g, '-');
     return moods.some((m) => {
       const moodKey =
         (m as any).date_key ||
-        new Date(m.created_at).toLocaleDateString('zh-CN', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit' 
+        new Date(m.created_at).toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
         }).replace(/\//g, '-');
       return moodKey === todayKey;
     });
   }, [moods]);
 
+  /**
+   * 响应式装饰生成：根据屏幕尺寸动态生成装饰元素
+   * 
+   * 处理流程：
+   * 1. 组件挂载时立即生成一次装饰
+   * 2. 监听窗口大小变化事件
+   * 3. 使用防抖（200ms）避免频繁重新生成
+   * 4. 清理时移除事件监听器和定时器
+   */
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -443,6 +596,7 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
       if (resizeTimeout) {
         window.clearTimeout(resizeTimeout);
       }
+      // 防抖：200ms 后才重新生成，避免频繁计算
       resizeTimeout = window.setTimeout(() => {
         updateDecorations();
       }, 200);
@@ -457,7 +611,12 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
     };
   }, []);
 
-  // 隐式记录登录日志（静默发送，不显示任何提示）
+  /**
+   * 隐式记录登录日志（静默发送，不显示任何提示）
+   * 
+   * 这个功能用于统计用户登录情况，但不影响用户体验
+   * 延迟500ms发送，避免影响页面加载性能
+   */
   useEffect(() => {
     if (typeof window === 'undefined') return;
 

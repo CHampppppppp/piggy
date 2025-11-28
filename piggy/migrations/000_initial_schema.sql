@@ -50,10 +50,21 @@ CREATE TABLE IF NOT EXISTS login_logs (
   INDEX idx_login_logs_logged_in_at (logged_in_at)
 );
 
+-- ============================================
+-- period_alerts 表：经期预警记录
+-- ============================================
+CREATE TABLE IF NOT EXISTS period_alerts (
+  id int AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+  target_date date NOT NULL COMMENT '预警的目标经期日期',
+  sent_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
+  INDEX idx_period_alerts_sent_at (sent_at)
+);
+
 -- 说明:
 -- moods: 存储用户的心情记录，包括类型、强度、备注和时间
 -- periods: 存储经期开始日期，用于预测未来经期
 -- account_locks: 记录账号锁定信息（密码错误等），支持密码和密保两种锁定类型
 -- login_logs: 记录成功登录的日志（隐式记录，不显示给用户）
+-- period_alerts: 记录经期预警邮件的发送记录，用于防重发和冷却控制
 -- 
 -- 所有索引都在表定义中创建，避免使用 IF NOT EXISTS（MySQL 版本兼容性问题）

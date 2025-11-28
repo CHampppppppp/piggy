@@ -89,12 +89,20 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
 
-  // 获取当月所有天数 - memoized
+  /**
+   * 获取当月所有天数
+   * 
+   * 使用 useMemo 缓存计算结果，避免每次渲染都重新计算
+   * 
+   * 返回：
+   * - daysInMonth: 当月的所有日期对象数组
+   * - emptyDays: 月初需要填充的空位数量（用于对齐星期）
+   */
   const { daysInMonth, emptyDays } = useMemo(() => {
     const start = startOfMonth(currentMonth);
     const days = eachDayOfInterval({ start, end: endOfMonth(currentMonth) });
-    const startDay = getDay(start);
-    const empty = Array.from({ length: startDay });
+    const startDay = getDay(start); // 获取当月第一天是星期几（0=周日，6=周六）
+    const empty = Array.from({ length: startDay }); // 生成空位数组，用于对齐日历网格
 
     return {
       daysInMonth: days,
@@ -102,11 +110,24 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
     };
   }, [currentMonth]);
 
-  // 辅助函数：查找特定日期的心情 - memoized
+  /**
+   * 查找特定日期的心情记录
+   * 
+   * 使用 useMemo 缓存心情映射表，避免每次渲染都重新构建
+   * 
+   * 日期匹配逻辑：
+   * 1. 优先使用 mood.date_key（如果存在，这是前端保存时生成的，基于用户本地时区）
+   * 2. 如果没有 date_key，则从 created_at 解析日期
+   * 3. 将日期格式化为 YYYY-MM-DD 格式进行比较
+   * 
+   * 注意：使用 Map 存储映射关系，查找效率 O(1)
+   */
   const getMoodForDay = useMemo(() => {
+    // 构建日期到心情的映射表
     const moodMap = new Map<string, Mood>();
     moods.forEach(m => {
       // 优先使用前端传入并保存的 date_key（基于用户本地时区计算的"哪一天"）
+      // 这样可以避免时区问题导致日期判断错误
       const dateKey =
         (m as any).date_key ||
         new Date(m.created_at).toLocaleDateString('zh-CN', { 
@@ -114,11 +135,13 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
           month: '2-digit', 
           day: '2-digit' 
         }).replace(/\//g, '-');
+      // 如果同一天有多条记录，只保留第一条（避免重复）
       if (!moodMap.has(dateKey)) {
         moodMap.set(dateKey, m);
       }
     });
 
+    // 返回查找函数
     return (day: Date) => {
       const dateKey = day.toLocaleDateString('zh-CN', { 
         year: 'numeric', 
@@ -129,7 +152,14 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
     };
   }, [moods]);
 
-  // 获取某天的经期类型
+  /**
+   * 获取某天的经期类型
+   * 
+   * 使用 useCallback 缓存函数，避免每次渲染都创建新函数
+   * 
+   * @param day - 要查询的日期
+   * @returns 'actual'（实际记录）、'predicted'（预测）或 null（非经期）
+   */
   const getPeriodType = useCallback((day: Date) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     return periodStatus[dateKey] ?? null;

@@ -22,6 +22,12 @@ function ChatWidget() {
     setMounted(true);
   }, []);
 
+  /**
+   * 自动滚动到底部
+   * 
+   * 当聊天面板打开或新消息到达时，自动滚动到底部
+   * 这样用户总是能看到最新的消息
+   */
   useEffect(() => {
     if (!open) return;
     const el = containerRef.current;
@@ -29,15 +35,34 @@ function ChatWidget() {
     el.scrollTop = el.scrollHeight;
   }, [open, messages.length]);
 
+  /**
+   * 发送消息处理函数
+   * 
+   * 处理流程：
+   * 1. 验证输入内容
+   * 2. 立即显示用户消息和空的助手消息（实现打字机效果）
+   * 3. 发送请求到后端 API（流式传输）
+   * 4. 逐块接收响应并实时更新助手消息
+   * 5. 处理错误情况
+   * 
+   * 流式响应处理：
+   * - 使用 ReadableStream 逐块读取响应
+   * - 每次接收到新块，立即更新最后一条助手消息
+   * - 这样可以实现打字机效果，提升用户体验
+   */
   const handleSend = async () => {
     const content = input.trim();
     if (!content || loading) return;
 
+    // 创建用户消息
     const userMessage: UiMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
       content,
     };
+    
+    // 立即显示用户消息和空的助手消息
+    // 空的助手消息用于后续流式更新
     setMessages((prev) => [...prev, userMessage, {
       id: `assistant-${Date.now()}`,
       role: 'assistant',
@@ -47,21 +72,25 @@ function ChatWidget() {
     setLoading(true);
 
     try {
+      // 准备发送给 API 的消息（不包含空的助手消息）
       const payloadMessages = [...messages, userMessage].map((m) => ({
         role: m.role,
         content: m.content,
       }));
 
+      // 发送请求，启用流式传输
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: payloadMessages, stream: true }),
       });
 
+      // 处理错误响应
       if (!res.ok) {
         const errorText = 'Champ 有点累了，稍后再试试？';
         setMessages((prev) => {
           const next = [...prev];
+          // 找到空的助手消息并更新为错误消息
           const lastIndex = next.findIndex((m) => m.id.startsWith('assistant-') && m.content === '');
           if (lastIndex !== -1) {
             next[lastIndex] = {
@@ -69,6 +98,7 @@ function ChatWidget() {
               content: errorText,
             };
           } else {
+            // 如果找不到空消息，添加新的错误消息
             next.push({
               id: `error-${Date.now()}`,
               role: 'assistant',
@@ -80,6 +110,7 @@ function ChatWidget() {
         return;
       }
 
+      // 获取流式响应的 reader
       const reader = res.body?.getReader();
       if (!reader) {
         return;
@@ -87,14 +118,20 @@ function ChatWidget() {
 
       const decoder = new TextDecoder('utf-8');
 
-      // 逐块读取流式内容，并实时更新最后一条 assistant 消息
+      /**
+       * 逐块读取流式内容，并实时更新最后一条 assistant 消息
+       * 
+       * 这样可以实现打字机效果：AI 的回复逐字显示
+       */
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) break; // 流结束
+        
         const chunkText = decoder.decode(value, { stream: true });
-        if (!chunkText) continue;
+        if (!chunkText) continue; // 跳过空块
 
+        // 更新最后一条助手消息，追加新接收到的文本
         setMessages((prev) => {
           const next = [...prev];
           const lastIndex = next.length - 1;
@@ -109,6 +146,7 @@ function ChatWidget() {
       }
     } catch (err) {
       console.error(err);
+      // 网络错误处理
       setMessages((prev) => [
         ...prev,
         {

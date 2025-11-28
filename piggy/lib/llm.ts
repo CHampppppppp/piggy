@@ -65,6 +65,17 @@ type ChatOptions = {
   context?: string;
 };
 
+/**
+ * 构建发送给 LLM 的消息列表
+ * 
+ * 消息结构：
+ * 1. 系统消息（包含人设提示词和上下文记忆）
+ * 2. 用户和助手的对话历史
+ * 
+ * @param messages - 对话历史消息
+ * @param context - 可选的上下文信息（包含历史记忆和实时信息）
+ * @returns 完整的消息列表，可以直接发送给 LLM
+ */
 function buildMessages({ messages, context }: ChatOptions): ChatMessage[] {
   const systemMessage: ChatMessage = {
     role: 'system',
@@ -91,7 +102,22 @@ export async function callDeepseekChat(options: ChatOptions) {
   return reply;
 }
 
-// 流式聊天：返回一个异步迭代器，每次产出一小段文本
+/**
+ * 流式聊天：返回一个异步迭代器，每次产出一小段文本
+ * 
+ * 这个函数用于实现打字机效果，让 AI 的回复逐字显示
+ * 
+ * @param options - 聊天选项（消息和上下文）
+ * @returns 异步生成器，每次 yield 一小段文本
+ * 
+ * 使用方式：
+ * ```typescript
+ * const iterator = await streamDeepseekChat({ messages, context });
+ * for await (const chunk of iterator) {
+ *   // chunk 是一小段文本，可以立即显示给用户
+ * }
+ * ```
+ */
 export async function streamDeepseekChat(options: ChatOptions) {
   const finalMessages = buildMessages(options);
 
@@ -101,11 +127,12 @@ export async function streamDeepseekChat(options: ChatOptions) {
     stream: true,
   });
 
+  // 异步生成器：从流中提取文本内容
   async function* iterChunks(): AsyncGenerator<string> {
     for await (const chunk of stream) {
       const delta = chunk.choices?.[0]?.delta?.content;
-      if (!delta) continue;
-      yield delta;
+      if (!delta) continue; // 跳过没有内容的块
+      yield delta; // 返回文本片段
     }
   }
 
@@ -188,6 +215,20 @@ const CLASSIFIER_FEW_SHOTS: ChatMessage[] = [
   { role: 'assistant', content: 'memory' },
 ];
 
+/**
+ * 基于关键词的查询分类（后备方案）
+ * 
+ * 如果智能分类器不可用或失败，使用这个简单的关键词匹配方法
+ * 
+ * @param query - 用户查询
+ * @returns 查询类型：'realtime' | 'memory' | 'mixed'
+ * 
+ * 分类逻辑：
+ * 1. 如果同时包含实时关键词和记忆关键词 → 'mixed'
+ * 2. 如果只包含实时关键词 → 'realtime'
+ * 3. 如果只包含记忆关键词 → 'memory'
+ * 4. 如果都不包含 → 默认返回 'memory'（保守策略）
+ */
 function classifyByKeywords(query: string): QueryType {
   const normalized = query.toLowerCase();
   const hasRealtime = REALTIME_KEYWORDS.some((keyword) =>
@@ -206,9 +247,23 @@ function classifyByKeywords(query: string): QueryType {
   if (hasMemory) {
     return 'memory';
   }
-  return 'memory';
+  return 'memory'; // 默认返回 memory，保守策略
 }
 
+/**
+ * 使用 LLM 进行智能查询分类
+ * 
+ * 这个方法比关键词匹配更准确，可以理解上下文和语义
+ * 
+ * @param query - 用户查询
+ * @returns 查询类型，如果分类失败或未启用则返回 null
+ * 
+ * 工作原理：
+ * 1. 使用 few-shot learning（示例学习）训练分类器
+ * 2. 提供系统提示词和示例，让 LLM 理解分类任务
+ * 3. LLM 只需要返回 'realtime'、'memory' 或 'mixed' 三个词之一
+ * 4. 如果 LLM 返回的内容不包含这三个词，返回 null，使用关键词分类作为后备
+ */
 async function classifyWithLLM(query: string): Promise<QueryType | null> {
   if (!SMART_CLASSIFIER_ENABLED) {
     return null;
@@ -217,14 +272,14 @@ async function classifyWithLLM(query: string): Promise<QueryType | null> {
   try {
     const completion = await deepseekClient.chat.completions.create({
       model: SMART_CLASSIFIER_MODEL,
-      max_tokens: 4,
-      temperature: 0,
+      max_tokens: 4, // 只需要返回一个词，限制 token 数量
+      temperature: 0, // 使用确定性输出，保证分类一致性
       messages: [
         {
           role: 'system',
           content: CLASSIFIER_SYSTEM_PROMPT,
         },
-        ...CLASSIFIER_FEW_SHOTS,
+        ...CLASSIFIER_FEW_SHOTS, // 提供示例，让 LLM 学习分类模式
         {
           role: 'user',
           content: query.trim(),
@@ -234,6 +289,7 @@ async function classifyWithLLM(query: string): Promise<QueryType | null> {
 
     const answer =
       completion.choices[0]?.message?.content?.toLowerCase().trim() || '';
+    // 检查返回内容是否包含有效的分类标签
     const found = QUERY_TYPES.find((label) => answer.includes(label));
     if (found) {
       return found;
@@ -242,28 +298,55 @@ async function classifyWithLLM(query: string): Promise<QueryType | null> {
     console.error('[llm] smart classifier failed, fallback to keywords', error);
   }
 
-  return null;
+  return null; // 分类失败，返回 null，使用关键词分类作为后备
 }
 
+/**
+ * 查询分类主函数
+ * 
+ * 优先使用智能分类器（LLM），如果失败则回退到关键词匹配
+ * 
+ * @param query - 用户查询
+ * @returns 查询类型：'realtime' | 'memory' | 'mixed'
+ * 
+ * 分类策略：
+ * 1. 如果查询为空，默认返回 'memory'（保守策略）
+ * 2. 尝试使用 LLM 智能分类
+ * 3. 如果 LLM 分类失败，使用关键词匹配作为后备
+ */
 export async function classifyQuery(query: string): Promise<QueryType> {
   const trimmed = (query || '').trim();
   if (!trimmed) {
-    return 'memory';
+    return 'memory'; // 空查询默认返回 memory
   }
 
+  // 优先使用智能分类器
   const aiGuess = await classifyWithLLM(trimmed);
   if (aiGuess) {
     return aiGuess;
   }
 
+  // 后备方案：关键词匹配
   return classifyByKeywords(trimmed);
 }
 
-// 获取当前实时信息
+/**
+ * 获取当前实时信息
+ * 
+ * 这个函数用于向 AI 提供当前的时间、日期等信息
+ * 这对于回答"现在几点了"、"今天是星期几"等问题很重要
+ * 
+ * @returns 包含当前时间信息的对象
+ * 
+ * 注意：
+ * - 使用固定的时区（Asia/Shanghai），确保时间信息的一致性
+ * - 返回格式化的中文字符串，方便 AI 理解和用户阅读
+ */
 export function getCurrentInfo() {
   const now = new Date();
   const timeZone = 'Asia/Shanghai'; // 中国时区
   
+  // 格式化的时间字符串，包含日期和时间
   const currentTime = now.toLocaleString('zh-CN', {
     timeZone,
     year: 'numeric',
@@ -275,6 +358,7 @@ export function getCurrentInfo() {
     weekday: 'long'
   });
   
+  // 格式化的日期字符串，更易读
   const currentDate = now.toLocaleDateString('zh-CN', {
     timeZone,
     year: 'numeric',
@@ -286,7 +370,7 @@ export function getCurrentInfo() {
   return {
     currentTime,
     currentDate,
-    timestamp: now.getTime(),
+    timestamp: now.getTime(), // Unix 时间戳，用于精确计算
     timeZone: 'Asia/Shanghai (UTC+8)'
   };
 }

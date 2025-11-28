@@ -78,11 +78,27 @@ COMMENT ON COLUMN login_logs.ip_address IS 'IP 地址';
 
 CREATE INDEX IF NOT EXISTS idx_login_logs_logged_in_at ON login_logs (logged_in_at DESC);
 
+-- ============================================
+-- period_alerts 表：经期预警记录
+-- ============================================
+CREATE TABLE IF NOT EXISTS period_alerts (
+  id SERIAL PRIMARY KEY,
+  target_date DATE NOT NULL,
+  sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE period_alerts IS '经期预警发送记录';
+COMMENT ON COLUMN period_alerts.target_date IS '预警的目标经期日期';
+COMMENT ON COLUMN period_alerts.sent_at IS '发送时间';
+
+CREATE INDEX IF NOT EXISTS idx_period_alerts_sent_at ON period_alerts (sent_at);
+
 -- 说明:
 -- moods: 存储用户的心情记录，包括类型、强度、备注和时间
 -- periods: 存储经期开始日期，用于预测未来经期
 -- account_locks: 记录账号锁定信息（密码错误等），支持密码和密保两种锁定类型
 -- login_logs: 记录成功登录的日志（隐式记录，不显示给用户）
+-- period_alerts: 记录经期预警邮件的发送记录，用于防重发和冷却控制
 -- 
 -- PostgreSQL 语法说明:
 -- - BIGSERIAL/SERIAL: 自动递增的整数类型（相当于 MySQL 的 AUTO_INCREMENT）
@@ -90,5 +106,3 @@ CREATE INDEX IF NOT EXISTS idx_login_logs_logged_in_at ON login_logs (logged_in_
 -- - TIMESTAMP: 时间戳类型（MySQL 的 datetime 和 timestamp 在 PostgreSQL 中都用 TIMESTAMP）
 -- - COMMENT ON: PostgreSQL 使用单独的语句添加注释
 -- - CREATE INDEX IF NOT EXISTS: PostgreSQL 支持此语法（9.5+）
-
-

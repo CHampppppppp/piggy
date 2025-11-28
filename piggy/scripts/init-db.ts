@@ -22,7 +22,7 @@ config({ path: join(process.cwd(), '.env') });
 // 确定使用哪个数据库
 const DB_CLIENT =
   process.env.DB_CLIENT ||
-  (process.env.NODE_ENV === 'development' ? 'mysql' : 'postgres');
+  (process.env.NODE_ENV === 'development' ? 'mysql' : 'postgres');//本地开发mysql，线上部署用postgres
 
 async function initMySQL() {
   const MYSQL_HOST = process.env.MYSQL_HOST || 'localhost';
