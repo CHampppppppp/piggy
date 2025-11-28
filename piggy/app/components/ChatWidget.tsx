@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 
@@ -20,6 +20,12 @@ const STICKER_MAP: Record<string, string> = {
   neutral: '/images/penguin.jpg',
 };
 
+// localStorage 键名
+const STORAGE_KEY = 'chat-messages';
+const SESSION_TIME_KEY = 'chat-session-time';
+// 会话自动清除时间（30分钟）
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30分钟
+
 function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<UiMessage[]>([]);
@@ -27,10 +33,145 @@ function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const autoClearTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const saveThrottleRef = useRef<NodeJS.Timeout | null>(null);
 
+  /**
+   * 从 localStorage 加载对话历史
+   */
+  const loadMessages = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const savedMessages = localStorage.getItem(STORAGE_KEY);
+      const sessionTime = localStorage.getItem(SESSION_TIME_KEY);
+
+      if (savedMessages && sessionTime) {
+        const messages = JSON.parse(savedMessages) as UiMessage[];
+        const sessionStartTime = parseInt(sessionTime, 10);
+        const now = Date.now();
+
+        // 检查会话是否过期（超过30分钟）
+        if (now - sessionStartTime > SESSION_TIMEOUT) {
+          // 会话过期，清除数据
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(SESSION_TIME_KEY);
+          setMessages([]);
+          return;
+        }
+
+        // 会话未过期，加载消息
+        setMessages(messages);
+      }
+    } catch (error) {
+      console.error('加载对话历史失败:', error);
+      // 如果解析失败，清除损坏的数据
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SESSION_TIME_KEY);
+    }
+  }, []);
+
+  /**
+   * 保存对话历史到 localStorage
+   * @param immediate 是否立即保存（不节流）
+   */
+  const saveMessages = useCallback((newMessages: UiMessage[], immediate = false) => {
+    if (typeof window === 'undefined') return;
+
+    const doSave = () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newMessages));
+        // 如果这是新会话，更新会话开始时间
+        const sessionTime = localStorage.getItem(SESSION_TIME_KEY);
+        if (!sessionTime) {
+          localStorage.setItem(SESSION_TIME_KEY, Date.now().toString());
+        }
+      } catch (error) {
+        console.error('保存对话历史失败:', error);
+      }
+    };
+
+    if (immediate) {
+      // 立即保存，清除之前的节流定时器
+      if (saveThrottleRef.current) {
+        clearTimeout(saveThrottleRef.current);
+        saveThrottleRef.current = null;
+      }
+      doSave();
+    } else {
+      // 节流保存：延迟 500ms，如果在这期间有新的保存请求，则取消之前的并重新计时
+      if (saveThrottleRef.current) {
+        clearTimeout(saveThrottleRef.current);
+      }
+      saveThrottleRef.current = setTimeout(doSave, 500);
+    }
+  }, []);
+
+  /**
+   * 清除当前对话
+   */
+  const clearConversation = useCallback(() => {
+    setMessages([]);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SESSION_TIME_KEY);
+    // 清除自动清除定时器
+    if (autoClearTimerRef.current) {
+      clearTimeout(autoClearTimerRef.current);
+      autoClearTimerRef.current = null;
+    }
+  }, []);
+
+  /**
+   * 设置自动清除定时器
+   */
+  const setupAutoClear = useCallback(() => {
+    // 清除之前的定时器
+    if (autoClearTimerRef.current) {
+      clearTimeout(autoClearTimerRef.current);
+    }
+
+    const sessionTime = localStorage.getItem(SESSION_TIME_KEY);
+    if (!sessionTime) return;
+
+    const sessionStartTime = parseInt(sessionTime, 10);
+    const elapsed = Date.now() - sessionStartTime;
+    const remaining = SESSION_TIMEOUT - elapsed;
+
+    if (remaining > 0) {
+      // 设置定时器，在剩余时间后清除
+      autoClearTimerRef.current = setTimeout(() => {
+        clearConversation();
+      }, remaining);
+    } else {
+      // 已经过期，立即清除
+      clearConversation();
+    }
+  }, [clearConversation]);
+
+  // 组件挂载时加载消息
   useEffect(() => {
     setMounted(true);
-  }, []);
+    loadMessages();
+    setupAutoClear();
+
+    // 清理定时器
+    return () => {
+      if (autoClearTimerRef.current) {
+        clearTimeout(autoClearTimerRef.current);
+      }
+      if (saveThrottleRef.current) {
+        clearTimeout(saveThrottleRef.current);
+      }
+    };
+  }, [loadMessages, setupAutoClear]);
+
+  // 当消息更新时，保存到 localStorage
+  useEffect(() => {
+    if (mounted && messages.length > 0) {
+      saveMessages(messages);
+      setupAutoClear();
+    }
+  }, [messages, mounted, saveMessages, setupAutoClear]);
 
   /**
    * 自动滚动到底部
@@ -118,11 +259,14 @@ function ChatWidget() {
 
     // 立即显示用户消息和空的助手消息
     // 空的助手消息用于后续流式更新
-    setMessages((prev) => [...prev, userMessage, {
+    const assistantMessage: UiMessage = {
       id: `assistant-${Date.now()}`,
       role: 'assistant',
       content: '',
-    }]);
+    };
+    const newMessages: UiMessage[] = [...messages, userMessage, assistantMessage];
+    setMessages(newMessages);
+    saveMessages(newMessages, true); // 立即保存
     setInput('');
     setLoading(true);
 
@@ -152,7 +296,7 @@ function ChatWidget() {
         const errorText = 'Champ 有点累了，稍后再试试？';
         console.error(`[ChatWidget:${requestId}] ✗ API 请求失败: ${res.status} ${res.statusText}`);
         setMessages((prev) => {
-          const next = [...prev];
+          const next: UiMessage[] = [...prev];
           // 找到空的助手消息并更新为错误消息
           const lastIndex = next.findIndex((m) => m.id.startsWith('assistant-') && m.content === '');
           if (lastIndex !== -1) {
@@ -162,12 +306,14 @@ function ChatWidget() {
             };
           } else {
             // 如果找不到空消息，添加新的错误消息
-            next.push({
+            const errorMessage: UiMessage = {
               id: `error-${Date.now()}`,
               role: 'assistant',
               content: errorText,
-            });
+            };
+            next.push(errorMessage);
           }
+          saveMessages(next, true); // 错误时立即保存
           return next;
         });
         return;
@@ -217,6 +363,8 @@ function ChatWidget() {
               content: next[lastIndex].content + chunkText,
             };
           }
+          // 节流保存，减少保存频率
+          saveMessages(next, false);
           return next;
         });
       }
@@ -225,6 +373,12 @@ function ChatWidget() {
       console.log(`[ChatWidget:${requestId}] ===== 消息处理完成 =====`);
       console.log(`[ChatWidget:${requestId}] 总耗时: ${totalDuration}ms`);
       console.log(`[ChatWidget:${requestId}] 最终回复长度: ${totalLength} 字符`);
+
+      // 流结束时立即保存一次，确保数据不丢失
+      setMessages((prev) => {
+        saveMessages(prev, true);
+        return prev;
+      });
     } catch (err) {
       const totalDuration = Date.now() - startTime;
       console.error(`[ChatWidget:${requestId}] ===== 请求异常 =====`);
@@ -233,14 +387,16 @@ function ChatWidget() {
       console.error(`[ChatWidget:${requestId}] 失败前耗时: ${totalDuration}ms`);
 
       // 网络错误处理
-      setMessages((prev) => [
-        ...prev,
-        {
+      setMessages((prev) => {
+        const errorMessage: UiMessage = {
           id: `neterr-${Date.now()}`,
           role: 'assistant',
           content: '网络好像断线了，再点一次发送试试？',
-        },
-      ]);
+        };
+        const next: UiMessage[] = [...prev, errorMessage];
+        saveMessages(next, true); // 错误时立即保存
+        return next;
+      });
     } finally {
       setLoading(false);
     }
@@ -293,13 +449,25 @@ function ChatWidget() {
               </div>
               <div className="text-xs font-bold">Champ</div>
             </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="text-xs font-bold px-2 py-1 rounded-lg border border-black bg-white hover:bg-gray-100 transition-colors"
-            >
-              ×
-            </button>
+            <div className="flex items-center gap-2">
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearConversation}
+                  className="text-xs font-bold px-2 py-1 rounded-lg border border-black bg-white hover:bg-gray-100 transition-colors"
+                  title="新建对话"
+                >
+                  新建对话
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-xs font-bold px-2 py-1 rounded-lg border border-black bg-white hover:bg-gray-100 transition-colors"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
           <div

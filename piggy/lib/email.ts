@@ -120,6 +120,9 @@ export async function sendSuperMoodAlert(payload: SuperMoodPayload) {
     subject: `Piggy 情绪提醒（${subjectPrefix}）`,
     text: textLines.join('\n'),
   });
+
+  // 8. 发送的心情预警邮箱
+  console.log(`[email] 心情预警邮件已发送至: ${ALERT_EMAIL_TO}`);
 }
 
 export async function sendPeriodAlert(nextPeriodDate: string, daysUntil: number) {
