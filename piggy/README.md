@@ -54,7 +54,7 @@
 2. **安装依赖**
    ```bash
    进入piggy目录
-   
+
    npm install
    ```
 3. **初始化数据库**  
@@ -62,14 +62,34 @@
    - 创建 `moods`, `periods`, `login_logs`, `account_locks` 等表。
 4. **配置 `.env.local`**
    ```ini
-   GIRLFRIEND_PASSWORD=超级安全的暗号
-   DB_CLIENT=mysql
-   MYSQL_HOST=localhost
-   MYSQL_USER=root
-   MYSQL_PASSWORD=数据库密码
-   MYSQL_DATABASE=数据库名
-   OPENAI_API_KEY=sk-***
-   PINECONE_API_KEY=pca-***
+ # neon 云数据库
+DATABASE_URL="postgresql://neondb_owner:npg_t4EyPhBVOJU1@ep-twilight-glitter-ahwj4z24-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+
+# 密码
+GIRLFRIEND_PASSWORD="密码"
+
+# deepseek聊天
+DEEPSEEK_API_KEY="deepseek api"
+
+# openai embedding（uiuiapi第三方平台）
+OPENAI_API_KEY=openAi的api
+OPENAI_BASE_URL=https://sg.uiuiapi.com/v1（baseurl，我这里用了第三方api平台，所以baseurl是第三方的）
+
+# pinecone云向量存储库
+PINECONE_API_KEY=pinecone密钥，免费官网获取
+# 对应的index名（类似于数据库名）
+PINECONE_INDEX=自定义
+
+# （可选）本地向量存储库服务chroma，使用docker部署（自行查询）（这个和pinecone二选一即可）
+#CHROMA_URL=http://localhost:8000
+
+# 接收邮箱配置（需要开启smtp服务，自行搜索）
+SMTP_URL=smtps://qq号@qq.com:smtp密钥@smtp.qq.com:465
+SMTP_FROM=qq号@qq.com
+
+# 利用ai进行语义判断（是要采用rag还是正常聊天）
+SMART_QUERY_CLASSIFIER=true（或者false）
+
    ```
 5. **启动开发服务器**
    ```bash
