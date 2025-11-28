@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
     })) as ChatMessage[];
 
     console.log(`[api/chat:${requestId}] 准备 LLM 消息: ${llmMessages.length} 条`);
-    console.log(`[api/chat:${requestId}] 可用工具: ${TOOLS.map(t => t.function.name).join(', ')}`);
+    console.log(`[api/chat:${requestId}] 可用工具: ${TOOLS.map(t => t.type === 'function' ? t.function.name : 'unknown').join(', ')}`);
 
     // 3. 循环执行 LLM 和 Tools
     // 我们使用"同步执行工具，最后返回结果"的策略

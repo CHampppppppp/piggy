@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, memo, useCallback } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import {
   format,
   startOfMonth,
@@ -86,8 +86,17 @@ const DayCell = memo(({
 DayCell.displayName = 'DayCell';
 
 function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  // 使用函数初始化，确保只在客户端执行，避免 SSR 和客户端时区不一致
+  // 服务端渲染时返回 null，客户端 hydration 时使用客户端时区的当前日期
+  const [currentMonth, setCurrentMonth] = useState<Date | null>(null);
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
+
+  // 在客户端挂载后设置当前月份（使用客户端时区）
+  useEffect(() => {
+    if (currentMonth === null) {
+      setCurrentMonth(new Date());
+    }
+  }, [currentMonth]);
 
   /**
    * 获取当月所有天数
@@ -99,6 +108,11 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
    * - emptyDays: 月初需要填充的空位数量（用于对齐星期）
    */
   const { daysInMonth, emptyDays } = useMemo(() => {
+    // 如果 currentMonth 还未初始化（SSR 阶段），返回空数组
+    if (!currentMonth) {
+      return { daysInMonth: [], emptyDays: [] };
+    }
+    
     const start = startOfMonth(currentMonth);
     const days = eachDayOfInterval({ start, end: endOfMonth(currentMonth) });
     const startDay = getDay(start); // 获取当月第一天是星期几（0=周日，6=周六）
@@ -165,8 +179,16 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
     return periodStatus[dateKey] ?? null;
   }, [periodStatus]);
 
-  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const handlePrevMonth = () => {
+    if (currentMonth) {
+      setCurrentMonth(subMonths(currentMonth, 1));
+    }
+  };
+  const handleNextMonth = () => {
+    if (currentMonth) {
+      setCurrentMonth(addMonths(currentMonth, 1));
+    }
+  };
 
   const getMoodEmoji = (moodValue: string) => {
     const mood = MOODS.find(m => m.value === moodValue);
@@ -189,7 +211,7 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
           <ChevronLeft size={20} strokeWidth={3} className="text-black" />
         </button>
         <h2 className="text-xl font-bold manga-text-thin px-4 py-1 bg-[#ffd6e7] rounded-full border-3 border-black shadow-[3px_3px_0_#1a1a1a]">
-          {format(currentMonth, 'yyyy年 M月', { locale: zhCN })}
+          {currentMonth ? format(currentMonth, 'yyyy年 M月', { locale: zhCN }) : '加载中...'}
         </h2>
         <button
           onClick={handleNextMonth}
@@ -235,7 +257,8 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
         {daysInMonth.map((day) => {
           const mood = getMoodForDay(day);
           const periodType = getPeriodType(day);
-          const isToday = isSameDay(day, new Date());
+          // 只在客户端有 currentMonth 时才判断今天，避免 SSR 时区问题
+          const isToday = currentMonth ? isSameDay(day, new Date()) : false;
 
           return (
             <DayCell
