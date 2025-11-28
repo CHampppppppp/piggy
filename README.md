@@ -17,8 +17,33 @@
 - **经期预测**  
   魔法书根据已保存周期自动推算平均周期、标记实际与预测区间，并在 180 天内绘制提示。  
 
-- **Champ：会记忆的 AI 聊天伙伴**  
-  前端聊天小部件通过 `/api/chat` 进行流式推理，后端会根据语义分类决定是否检索 Pinecone 里的记忆，并可自动把“帮我记住”的内容写入向量库。  
+- **电子男友：会记忆的 AI 聊天伙伴兼管家（agent）**  
+  前端聊天小部件通过 `/api/chat` 进行流式推理，后端会根据语义分类决定是否检索 Pinecone 里的记忆，并可自动把“帮我记住”的内容写入向量库。
+
+  具备Function Calling 能力，可通过聊天直接操作魔法书：
+  
+  🗣️ 记录心情 (log_mood)
+
+  女朋友：“今天老板发疯气死我了！”
+
+  男朋友：自动调用工具在数据库记录一条 angry 心情，强度自动判断，并安抚你。
+
+  🩸 记录经期 (track_period)
+
+  女朋友：“大姨妈来了肚子痛……”
+
+  男朋友：自动在日历记录经期开始，并提醒多喝热水。
+
+  🧠 智能记忆 (save_memory)
+
+  女朋友：“帮我记住周六要带猫去打疫苗。”
+
+  男朋友：自动提取关键信息存入向量库（比之前的关键词匹配更智能）。
+
+  🖼️ 情绪贴纸 (show_sticker)
+
+  男朋友：在聊到开心或难过的话题时，可以在回复中直接发表情包（如 [STICKER:happy]），前端会自动渲染成大图贴纸。
+
 
 - **记忆上传中心**  
   `/upload` 页面允许把文本/Markdown 或纯文字笔记切分后写入 Pinecone，方便在聊天时引用。  
@@ -28,7 +53,8 @@
 ## 技术栈
 
 - 前端：Next.js 16 App Router、React 19、Tailwind CSS 4、Framer Motion、Lucide React。
-- 后端：Next.js Server Actions + Route Handlers、MySQL（默认）与 Neon/Postgres 双引擎、Pinecone、OpenAI Embedding、DeepSeek Chat API。
+- 后端：Next.js Server Actions + Route Handlers、MySQL（默认）与 Neon/Postgres 双引擎、Pinecone、OpenAI Embedding。
+- AI 能力：DeepSeek Chat API (支持 Function Calling/Tool Use)、RAG (Retrieval-Augmented Generation)。
 - 其它：Nodemailer 邮件告警、date-fns 时间处理、PWA 风格贴纸组件系统。
 
 ## 快速开始
@@ -36,20 +62,22 @@
 1. **准备运行环境**  
    - Node.js ≥ 18.18  
    - MySQL（或准备好 Neon 云数据库）
-   - pinecone云向量存储库
-2. **安装依赖**
-   ```bash
-   进入piggy目录
+   - Pinecone 云向量存储库
 
+2. **进入项目目录并安装依赖**
+   ```bash
+   cd piggy
    npm install
    ```
+
 3. **初始化数据库**  
-   - 在目标库执行 `migrations/` 里的 SQL（分为psql版本和mysql版本）。  
+   - 在目标库执行 `migrations/` 里的 SQL（分为 psql 版本和 mysql 版本）。  
    - 创建 `moods`, `periods`, `login_logs`, `account_locks` 等表。
-4. **配置 `.env.local`** (如果部署vercel，还需要在vercel控制台里配置)
+
+4. **配置 `.env.local`** (如果部署 Vercel，还需要在 Vercel 控制台里配置)
 
 ```ini
- # neon 云数据库（neon云数据库会给一个密钥类似于：）
+# neon 云数据库（neon云数据库会给一个密钥类似于：）
 DATABASE_URL="postgresql://neondb_owner:npg_t4EysdfdsfJU1@ep-twilight-glitter-ahwj4z24-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # 本地mysql数据库
@@ -59,8 +87,10 @@ MYSQL_PASSWORD="数据库密码"
 # 魔法书密码
 GIRLFRIEND_PASSWORD="密码"
 
-# deepseek聊天
-DEEPSEEK_API_KEY="deepseek api"
+# DeepSeek 聊天配置
+DEEPSEEK_API_KEY="deepseek api key"
+# 可选：自定义 DeepSeek Base URL
+# DEEPSEEK_API_BASE="https://api.deepseek.com"
 
 # openai embedding（uiuiapi第三方平台）
 OPENAI_API_KEY=openAi的api
@@ -69,17 +99,17 @@ OPENAI_BASE_URL=https://sg.uiuiapi.com/v1（baseurl，我这里用了第三方ap
 # pinecone云向量存储库
 PINECONE_API_KEY=pinecone密钥，免费官网获取
 # 对应的index名（类似于数据库名）
-PINECONE_INDEX=自定义
+PINECONE_INDEX=自己取名
 
-# （可选）本地向量存储库服务chroma，使用docker部署（自行查询）（这个和pinecone二选一即可）
-#CHROMA_URL=http://localhost:8000
+# （可选）本地向量存储库服务 Chroma，使用 Docker 部署（自行查询）（这个和 Pinecone 二选一即可）
+# CHROMA_URL=http://localhost:8000
 
-# 接收邮箱配置（需要开启smtp服务，自行搜索）
+# 接收邮箱配置（需要开启邮箱的 SMTP 服务，自行搜索）
 SMTP_URL=smtps://qq号@qq.com:smtp密钥@smtp.qq.com:465
 SMTP_FROM=qq号@qq.com
 
-# 利用ai进行语义判断（是要采用rag还是正常聊天）
-SMART_QUERY_CLASSIFIER=true（或者false）
+# 利用 AI 进行语义判断（是要采用 RAG 还是正常聊天）
+SMART_QUERY_CLASSIFIER=true
 
 # CRON Job（每日定期执行某些任务，这里是检查经期）
 CRON_SECRET="这个值自己随便取"

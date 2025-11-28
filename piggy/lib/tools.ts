@@ -11,8 +11,8 @@ export const TOOLS: ChatCompletionTool[] = [
         properties: {
           mood: {
             type: 'string',
-            enum: ['happy', 'sad', 'angry', 'scared', 'tired', 'excited', 'neutral'],
-            description: '心情类别',
+            enum: ['happy', 'blissful', 'tired', 'annoyed', 'angry', 'depressed'],
+            description: '心情类别: happy(开心), blissful(幸福), tired(累), annoyed(烦躁), angry(生气), depressed(沮丧)',
           },
           intensity: {
             type: 'number',
