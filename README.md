@@ -1,12 +1,49 @@
 # Mood Journey · Girlfriend Diary
 
-「写给女朋友的私密心情本」：它融合了可爱的少女系 UI、经期预测、情绪日历、AI 聊天伙伴以及记忆上传能力，让恋人之间的碎碎念、计划和心情都被温柔地保存下来。
+「写给女朋友的私密心情本」：它融合了可爱的少女系 UI、经期预测、情绪日历、AI Agent管家以及记忆上传能力，让恋人之间的碎碎念、计划和心情都被温柔地保存下来。
 
 ## 项目简介
 
 - 根路由会按照是否通过暗号登录决定显示登录界面还是主界面。成功登录后即可在同一屏幕内查看心情日历、历史列表、经期预测和最新提醒。`app/page.tsx` 中通过 `hasValidSession`、`getMoods`、`getPeriods` 进行这一串服务端动作。  
 
 ## 功能亮点
+
+- **电子男友：会记忆的 AI 聊天伙伴兼管家（agent）**  
+
+  - 有“大脑”做决策，意图识别，多步循环推理。
+
+  - 拥有长时记忆（RAG）
+
+  - 具备感知和环境交互（时间，天气感知）
+
+  - 会使用工具，具备Function Calling 能力，可通过聊天直接操作魔法书：
+    - 🗣️ 记录心情 (log_mood)
+
+      女朋友：“今天老板发疯气死我了！”
+
+      男朋友：自动调用工具在数据库记录一条 angry 心情，强度自动判断，并安抚你。
+
+    - 🩸 记录经期 (track_period)
+
+      女朋友：“大姨妈来了肚子痛……”
+
+      男朋友：自动在日历记录经期开始，并提醒多喝热水。
+
+    - 🧠 智能记忆 (save_memory)
+
+      女朋友：“帮我记住周六要带猫去打疫苗。”
+
+      男朋友：自动提取关键信息存入向量库（比之前的关键词匹配更智能）。
+
+    - 🖼️ 情绪贴纸 (show_sticker)
+
+      男朋友：在聊到开心或难过的话题时，可以在回复中直接发表情包（如 [STICKER:happy]），前端会自动渲染成大图贴纸。
+
+    - 🌤️ 天气查询 (get_weather)
+
+      女朋友：“今天北京天气怎么样？”
+
+      男朋友：自动调用天气API获取实时天气信息并回复。
 
 - **密码锁 + 密保多重防护**  
   使用 cookie 记录尝试次数，支持自动锁定、密保问题、数据库级锁升级与 30 天免登录。  
@@ -16,40 +53,6 @@
 
 - **经期预测**  
   魔法书根据已保存周期自动推算平均周期、标记实际与预测区间，并在 180 天内绘制提示。  
-
-- **电子男友：会记忆的 AI 聊天伙伴兼管家（agent）**  
-  前端聊天小部件通过 `/api/chat` 进行流式推理，后端会根据语义分类决定是否检索 Pinecone 里的记忆，并可自动把“帮我记住”的内容写入向量库。
-
-  具备Function Calling 能力，可通过聊天直接操作魔法书：
-  
-  🗣️ 记录心情 (log_mood)
-
-  女朋友：“今天老板发疯气死我了！”
-
-  男朋友：自动调用工具在数据库记录一条 angry 心情，强度自动判断，并安抚你。
-
-  🩸 记录经期 (track_period)
-
-  女朋友：“大姨妈来了肚子痛……”
-
-  男朋友：自动在日历记录经期开始，并提醒多喝热水。
-
-  🧠 智能记忆 (save_memory)
-
-  女朋友：“帮我记住周六要带猫去打疫苗。”
-
-  男朋友：自动提取关键信息存入向量库（比之前的关键词匹配更智能）。
-
-  🖼️ 情绪贴纸 (show_sticker)
-
-  男朋友：在聊到开心或难过的话题时，可以在回复中直接发表情包（如 [STICKER:happy]），前端会自动渲染成大图贴纸。
-
-  🌤️ 天气查询 (get_weather)
-
-  女朋友：“今天北京天气怎么样？”
-
-  男朋友：自动调用天气API获取实时天气信息并回复。
-
 
 - **记忆上传中心**  
   `/upload` 页面允许把文本/Markdown 或纯文字笔记切分后写入 Pinecone，方便在聊天时引用。  
@@ -65,10 +68,12 @@
 
 ## 快速开始
 
-1. **准备运行环境**  
+1. **准备条件**  
    - Node.js ≥ 18.18  
-   - MySQL（或准备好 Neon 云数据库）
+   - MySQL/Neon云数据库
    - Pinecone 云向量存储库
+   - 和风天气API
+   - 大模型API
 
 2. **进入项目目录并安装依赖**
    ```bash
@@ -126,11 +131,11 @@ QWEATHER_PROJECT_ID=参考控制台里的项目ID
 QWEATHER_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
 MC4CAsdsBQYDK2VwBCIEICcFdZzcMCh7sGTMOnZIW9Sz05dIXjFRx94jy9CsgjW8
 -----END PRIVATE KEY-----
-"（生成的私钥，还要上传公钥到控制台）
+"（生成的私钥类似于上面的格式，另外还有公钥要上传到控制台）
 
 
 
-# CRON Job（每日定期执行某些任务，这里是检查经期）
+# CRON Job key（每日定期执行某些任务，这里是检查经期）
 CRON_SECRET="这个值自己随便取"
 ```
 
@@ -141,34 +146,43 @@ CRON_SECRET="这个值自己随便取"
 
 6. 打开 `http://localhost:3000`，输入暗号后即可看到主界面。
 
-## 数据模型 & 记忆体系
+## Agent 架构与记忆体系
 
-- `moods`：`mood/intensity/note/date_key/created_at`，供心情日历与历史列表使用。  
-- `periods`：记录经期开始日期，魔法书据此预测下一个周期。  
-- `account_locks`：保存锁定原因、时长、类型（密码/密保）。  
-- `login_logs`：记录成功登录的 UA/IP。  
-- Pinecone 中的 `piggy` namespace 同时收集三类记忆：  
-  - `mood`：来自心情记录；  
-  - `file`：上传的文档切片；  
-  - `note`：聊天或纯文字上传的备忘。
+Piggy 不仅仅是一个 Web App，更是一个完整的 **Autonomous AI Agent** 系统。
+
+### 🧠 感知与决策系统
+- **感知 (Perception)**：不仅接收用户文本，还感知当前时间、日期、时区 (`date-fns`) 和外部环境（如通过和风天气 API 获取实时天气）。
+- **大脑 (Brain)**：基于 DeepSeek V3 构建的决策中枢，负责意图识别（Query Classification）和复杂任务规划。
+- **行动 (Action)**：通过 Server Actions 执行具体任务，包括数据库读写、邮件发送、前端状态更新。
+
+### 📚 记忆体系 (RAG Memory Stream)
+- **结构化记忆 (SQL)**：
+  - `moods`：核心情绪数据，用于生成统计图表和趋势分析。
+  - `periods`：生理周期数据，用于算法预测。
+- **非结构化记忆 (Vector DB)**：
+  - Pinecone (`piggy` namespace) 存储语义向量，支持混合检索：
+    - `mood`：自动同步的心情日记。
+    - `file`：用户上传的文档/聊天记录切片。
+    - `note`：对话中提取的关键信息（如“记住我喜欢吃草莓”）。
 
 ## 前端模块拆解
 
-- `MoodDashboard`：汇总卡片、每日问候、心情表单、日历/历史切换、AI 聊天浮窗。  
-- `MoodCalendar`：按照 `date_key` 使颜色分级，并对经期状态进行背景标记。  
-- `MoodHistory`：分组显示最近 30 天天气泡卡片。  
-- `MoodForm`：创建/更新心情（含“今天就是纪念日/经期开始”选项）。  
-- `ChatWidget`：右下角浮动聊天悬窗，支持流式输出和 Enter 发送。  
-- `MemoryUploader`：文本切块与上传进度反馈。
+- `MoodDashboard`：核心控制台，集成状态管理、数据流转和 UI 交互。
+- `MoodCalendar`：热力图风格的日历组件，动态展示情绪密度和生理期预测。
+- `ChatWidget`：支持流式响应 (Streaming UI) 的智能对话框，内置打字机效果和自动滚动。
+- `KawaiiStickers`：基于 PWA 优化的本地表情包系统，支持 AI 动态调用。
+- `MemoryUploader`：支持断点续传和进度的记忆植入模块。
 
 ## 运行与部署建议
 
-- 默认监听 `3000` 端口，可直接部署到 Vercel 或任意 Node 服务器。  
-- 生产环境建议：  
-  - 配置 HTTPS 与真实域名，确保 cookie `secure` 生效；  
-  - 在 SMTP 侧使用应用专用密码；
-  - 定期清理 `account_locks`、`login_logs`，避免无限膨胀。  
-- 若需要多用户扩展，可在数据库中增加 `user_id` 字段并为 Pinecone namespace 做拆分。
+- **低成本架构**：完美适配 Vercel / Netlify 等 Serverless 环境。
+- **数据库策略**：
+  - 开发环境：MySQL / Docker
+  - 生产环境：Neon (Serverless Postgres) + Pinecone (Serverless Vector DB)
+- **安全建议**：
+  - 生产环境强制开启 HTTPS (Cookie Secure 策略)。
+  - SMTP 服务建议使用独立的应用专用密码。
+  - 定期轮转 `CRON_SECRET` 以保护定时任务接口。
 
 ## 后续 Roadmap
 

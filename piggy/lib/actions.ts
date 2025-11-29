@@ -242,8 +242,33 @@ export async function logMoodFromAI({ mood, intensity, note }: { mood: string; i
 }
 
 // AI 调用的经期记录函数
+// 注意：需要正确处理时区，确保使用北京时间
 export async function trackPeriodFromAI({ startDate }: { startDate?: string }) {
-  const date = startDate ? new Date(startDate) : new Date();
+  let date: Date;
+  
+  if (startDate) {
+    // AI 传入了日期字符串（格式：YYYY-MM-DD）
+    // 这个日期是北京时间的日期，需要明确指定时区
+    // 使用 "YYYY-MM-DDT00:00:00+08:00" 格式来确保正确解析为北京时间
+    date = new Date(`${startDate}T00:00:00+08:00`);
+  } else {
+    // AI 没有传入日期，使用北京时间的今天
+    // 服务器可能运行在 UTC 时区，需要手动获取北京时间的日期
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const parts = formatter.formatToParts(now);
+    const year = parts.find(p => p.type === 'year')?.value;
+    const month = parts.find(p => p.type === 'month')?.value;
+    const day = parts.find(p => p.type === 'day')?.value;
+    // 构造北京时间的 00:00:00
+    date = new Date(`${year}-${month}-${day}T00:00:00+08:00`);
+  }
+  
   await pool.query(
     'INSERT INTO periods (start_date) VALUES (?)',
     [date]
