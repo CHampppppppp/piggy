@@ -2,6 +2,9 @@
 
 「写给女朋友的私密心情本」：它融合了可爱的少女系 UI、经期预测、情绪日历、AI Agent管家以及记忆上传能力，让恋人之间的碎碎念、计划和心情都被温柔地保存下来。
 
+## 项目演示
+https://www.bilibili.com/video/BV1qtSgBmEUS
+
 ## 项目简介
 
 - 根路由会按照是否通过暗号登录决定显示登录界面还是主界面。成功登录后即可在同一屏幕内查看心情日历、历史列表、经期预测和最新提醒。`app/page.tsx` 中通过 `hasValidSession`、`getMoods`、`getPeriods` 进行这一串服务端动作。  
