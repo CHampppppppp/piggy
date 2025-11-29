@@ -9,54 +9,162 @@ import {
 import { searchMemories, addMemories, type MemoryRecord } from '@/lib/vectorStore';
 import { TOOLS } from '@/lib/tools';
 import { logMoodFromAI, trackPeriodFromAI } from '@/lib/actions';
+import * as jose from 'jose';
+
+// JWT Token 缓存，避免每次请求都重新生成
+let cachedJwtToken: string | null = null;
+let cachedJwtExpiry: number = 0;
+
+/**
+ * 生成和风天气 JWT Token
+ * 使用 Ed25519 私钥签名
+ * 
+ * 参考文档: https://dev.qweather.com/docs/configuration/authentication/
+ */
+async function generateQWeatherJWT(): Promise<string> {
+  const privateKeyPem = process.env.QWEATHER_PRIVATE_KEY;
+  const keyId = process.env.QWEATHER_KEY_ID;
+  const projectId = process.env.QWEATHER_PROJECT_ID;
+
+  if (!privateKeyPem || !keyId || !projectId) {
+    throw new Error('缺少 JWT 配置：QWEATHER_PRIVATE_KEY, QWEATHER_KEY_ID, QWEATHER_PROJECT_ID');
+  }
+
+  // 检查缓存的 token 是否还有效（提前5分钟过期）
+  const now = Math.floor(Date.now() / 1000);
+  if (cachedJwtToken && cachedJwtExpiry > now + 300) {
+    return cachedJwtToken;
+  }
+
+  // 解析 PEM 格式的私钥
+  // 处理环境变量中的换行符（\n 字符串转为实际换行）
+  const formattedKey = privateKeyPem.replace(/\\n/g, '\n');
+  const privateKey = await jose.importPKCS8(formattedKey, 'EdDSA');
+
+  // 设置时间：iat 为当前时间前30秒，exp 为15分钟后
+  const iat = now - 30;
+  const exp = now + 900; // 15分钟有效期
+
+  // 生成 JWT
+  const jwt = await new jose.SignJWT({ sub: projectId })
+    .setProtectedHeader({ alg: 'EdDSA', kid: keyId })
+    .setIssuedAt(iat)
+    .setExpirationTime(exp)
+    .sign(privateKey);
+
+  // 缓存 token
+  cachedJwtToken = jwt;
+  cachedJwtExpiry = exp;
+
+  console.log('[QWeather] 已生成新的 JWT Token，有效期至:', new Date(exp * 1000).toLocaleString('zh-CN'));
+
+  return jwt;
+}
 
 /**
  * 获取天气信息
- * 支持多种天气API：
- * 1. OpenWeatherMap (需要 OPENWEATHER_API_KEY)
- * 2. 高德地图API (需要 AMAP_API_KEY，更适合中国城市)
+ * 使用和风天气 API + JWT 认证
+ * 
+ * 环境变量配置：
+ * - QWEATHER_PRIVATE_KEY: Ed25519 私钥（PEM格式，必须）
+ * - QWEATHER_KEY_ID: 凭据ID（必须）
+ * - QWEATHER_PROJECT_ID: 项目ID（必须）
+ * - QWEATHER_API_HOST: API Host（必须，从控制台获取）
+ * 
+ * 参考文档: 
+ * - https://dev.qweather.com/docs/configuration/authentication/
+ * - https://dev.qweather.com/docs/api/geoapi/city-lookup/
  */
 async function getWeatherInfo(city: string): Promise<string> {
-  // 优先使用高德地图API（更适合中国城市）
-  const amapKey = process.env.AMAP_API_KEY;
-  if (amapKey) {
-    try {
-      const response = await fetch(
-        `https://restapi.amap.com/v3/weather/weatherInfo?key=${amapKey}&city=${encodeURIComponent(city)}&extensions=base&output=json`
-      );
-      const data = await response.json();
-      
-      if (data.status === '1' && data.lives && data.lives.length > 0) {
-        const weather = data.lives[0];
-        return `【${weather.city}天气】\n天气：${weather.weather}\n温度：${weather.temperature}℃\n风向：${weather.winddirection}\n风力：${weather.windpower}级\n湿度：${weather.humidity}%\n发布时间：${weather.reporttime}`;
-      } else {
-        return `抱歉，无法获取 ${city} 的天气信息。`;
-      }
-    } catch (error) {
-      console.error('[getWeatherInfo] 高德地图API调用失败:', error);
-    }
+  const qweatherHost = process.env.QWEATHER_API_HOST;
+
+  if (!qweatherHost) {
+    return `抱歉，天气服务暂时不可用。请确保已配置API Host（QWEATHER_API_HOST）。`;
   }
 
-  // 备用：使用 OpenWeatherMap API
-  const openWeatherKey = process.env.OPENWEATHER_API_KEY;
-  if (openWeatherKey) {
-    try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${openWeatherKey}&units=metric&lang=zh_cn`
-      );
-      const data = await response.json();
-      
-      if (data.cod === 200) {
-        return `【${data.name}天气】\n天气：${data.weather[0].description}\n温度：${Math.round(data.main.temp)}℃\n体感温度：${Math.round(data.main.feels_like)}℃\n最高温度：${Math.round(data.main.temp_max)}℃\n最低温度：${Math.round(data.main.temp_min)}℃\n湿度：${data.main.humidity}%\n风速：${data.wind?.speed || 0} m/s`;
-      } else {
-        return `抱歉，无法获取 ${city} 的天气信息。`;
-      }
-    } catch (error) {
-      console.error('[getWeatherInfo] OpenWeatherMap API调用失败:', error);
-    }
+  // 生成 JWT Token
+  let jwtToken: string;
+  try {
+    jwtToken = await generateQWeatherJWT();
+  } catch (error) {
+    console.error('[getWeatherInfo] JWT生成失败:', error);
+    return `抱歉，天气服务配置错误。${error instanceof Error ? error.message : ''}`;
   }
 
-  return `抱歉，天气服务暂时不可用。请确保已配置天气API密钥（AMAP_API_KEY 或 OPENWEATHER_API_KEY）。`;
+  // 构建请求 Headers（使用 JWT Bearer Token）
+  const fetchOptions: RequestInit = {
+    headers: { 'Authorization': `Bearer ${jwtToken}` }
+  };
+
+  try {
+    // 1. 获取城市ID（GeoAPI 路径: /geo/v2/city/lookup）
+    // 注意：GeoAPI 和天气 API 使用同一个 API Host
+    const cityLookupUrl = `https://${qweatherHost}/geo/v2/city/lookup?location=${encodeURIComponent(city)}`;
+    const cityRes = await fetch(cityLookupUrl, fetchOptions);
+    
+    if (!cityRes.ok) {
+       const errorText = await cityRes.text();
+       console.error(`[getWeatherInfo] 城市查询API请求失败: ${cityRes.status} ${cityRes.statusText}`, errorText);
+       return `抱歉，天气服务暂时不可用 (City API Error: ${cityRes.status})。`;
+    }
+
+    const cityResText = await cityRes.text();
+    if (!cityResText) {
+      console.error(`[getWeatherInfo] 城市查询API返回为空`);
+      return `抱歉，天气服务暂时不可用 (Empty Response)。`;
+    }
+
+    let cityData;
+    try {
+      cityData = JSON.parse(cityResText);
+    } catch (e) {
+       console.error(`[getWeatherInfo] 城市查询API返回无效JSON:`, cityResText);
+       return `抱歉，天气服务暂时不可用 (Invalid JSON)。`;
+    }
+
+    if (cityData.code !== '200' || !cityData.location || cityData.location.length === 0) {
+      return `抱歉，找不到城市 ${city} 的信息。`;
+    }
+
+    const locationId = cityData.location[0].id;
+    const cityName = cityData.location[0].name;
+
+    // 2. 获取天气预报 (每日预报)
+    // 文档: https://dev.qweather.com/docs/api/weather/weather-daily-forecast/
+    const weatherUrl = `https://${qweatherHost}/v7/weather/3d?location=${locationId}`;
+    const weatherRes = await fetch(weatherUrl, fetchOptions);
+
+    if (!weatherRes.ok) {
+      const errorText = await weatherRes.text();
+      console.error(`[getWeatherInfo] 天气查询API请求失败: ${weatherRes.status} ${weatherRes.statusText}`, errorText);
+      return `抱歉，天气服务暂时不可用 (Weather API Error: ${weatherRes.status})。`;
+    }
+
+    const weatherResText = await weatherRes.text();
+    if (!weatherResText) {
+       console.error(`[getWeatherInfo] 天气查询API返回为空`);
+       return `抱歉，天气服务暂时不可用 (Empty Weather Response)。`;
+    }
+
+    let weatherData;
+    try {
+       weatherData = JSON.parse(weatherResText);
+    } catch (e) {
+       console.error(`[getWeatherInfo] 天气查询API返回无效JSON:`, weatherResText);
+       return `抱歉，天气服务暂时不可用 (Invalid Weather JSON)。`;
+    }
+
+    if (weatherData.code === '200' && weatherData.daily && weatherData.daily.length > 0) {
+      const today = weatherData.daily[0];
+      return `【${cityName}今日天气】\n天气：${today.textDay} (白天) / ${today.textNight} (夜间)\n温度：${today.tempMin}℃ ~ ${today.tempMax}℃\n风向：${today.windDirDay}\n风力：${today.windScaleDay}级\n湿度：${today.humidity}%\n降水：${today.precip}mm\n更新时间：${new Date(weatherData.updateTime).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`;
+    } else {
+      return `抱歉，无法获取 ${cityName} 的天气信息 (Code: ${weatherData.code})。`;
+    }
+
+  } catch (error) {
+    console.error('[getWeatherInfo] 和风天气API调用失败:', error);
+    return `抱歉，获取天气信息时发生错误。`;
+  }
 }
 
 type ApiChatMessage = {

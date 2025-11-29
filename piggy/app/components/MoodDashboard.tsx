@@ -820,7 +820,7 @@ export default function MoodDashboard({ moods, periods }: { moods: Mood[], perio
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
                   transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                  className="w-full max-w-sm bg-white border-t-4 sm:border-4 border-black rounded-t-3xl sm:rounded-3xl px-4 py-4 sm:shadow-[6px_6px_0_#1a1a1a] h-[82vh] sm:h-auto sm:max-h-[90vh] overflow-hidden"
+                  className="w-full max-w-sm bg-white border-t-4 sm:border-4 border-black rounded-t-3xl sm:rounded-3xl px-4 py-4 sm:shadow-[6px_6px_0_#1a1a1a] h-auto max-h-[92vh] sm:max-h-[90vh] overflow-y-auto scrollbar-hide"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* 拖拽指示条 (仅移动端) */}

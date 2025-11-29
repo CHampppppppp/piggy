@@ -16,7 +16,7 @@ import { zhCN } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, X, Edit2 } from 'lucide-react';
 import type { Mood } from '@/lib/types';
 import { MOODS } from './MoodForm';
-import { HeartSticker, PawSticker } from './KawaiiStickers';
+import { HeartSticker, PawSticker, ArrowSticker } from './KawaiiStickers';
 
 // Define prop type
 interface MoodCalendarProps {
@@ -79,6 +79,13 @@ const DayCell = memo(({
             }`}
         />
       )}
+
+      {/* 今天指示箭头 - 漫画风格 */}
+      {isToday && (
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none filter drop-shadow-sm">
+          <ArrowSticker size={32} className="text-pink-500" />
+        </div>
+      )}
     </div>
   );
 });
@@ -112,7 +119,7 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
     if (!currentMonth) {
       return { daysInMonth: [], emptyDays: [] };
     }
-    
+
     const start = startOfMonth(currentMonth);
     const days = eachDayOfInterval({ start, end: endOfMonth(currentMonth) });
     const startDay = getDay(start); // 获取当月第一天是星期几（0=周日，6=周六）
@@ -144,10 +151,10 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
       // 这样可以避免时区问题导致日期判断错误
       const dateKey =
         (m as any).date_key ||
-        new Date(m.created_at).toLocaleDateString('zh-CN', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit' 
+        new Date(m.created_at).toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
         }).replace(/\//g, '-');
       // 如果同一天有多条记录，只保留第一条（避免重复）
       if (!moodMap.has(dateKey)) {
@@ -157,10 +164,10 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
 
     // 返回查找函数
     return (day: Date) => {
-      const dateKey = day.toLocaleDateString('zh-CN', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit' 
+      const dateKey = day.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
       }).replace(/\//g, '-');
       return moodMap.get(dateKey) || null;
     };
@@ -329,8 +336,8 @@ function MoodCalendar({ moods, periodStatus, onEditMood }: MoodCalendarProps) {
                   <div
                     key={level}
                     className={`flex-1 h-3 rounded-full border-2 border-black transition-colors ${level <= selectedMood.intensity
-                        ? 'bg-[#ffd6e7]'
-                        : 'bg-gray-100'
+                      ? 'bg-[#ffd6e7]'
+                      : 'bg-gray-100'
                       }`}
                   />
                 ))}
