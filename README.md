@@ -80,7 +80,7 @@
    - 在目标库执行 `migrations/` 里的 SQL（分为 psql 版本和 mysql 版本）。  
    - 创建 `moods`, `periods`, `login_logs`, `account_locks` 等表。
 
-4. **配置 `.env.local`** (如果部署 Vercel，还需要在 Vercel 控制台里配置)
+4. **配置 `.env.local`** (注意：如果部署vercel，所有的环境变量都要在Vercel控制台里再配置一次)
 
 ```ini
 # neon 云数据库（neon云数据库会给一个密钥类似于：）
