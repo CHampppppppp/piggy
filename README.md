@@ -148,7 +148,7 @@ CRON_SECRET="这个值自己随便取"
 
 ## Agent 架构与记忆体系
 
-Piggy 不仅仅是一个 Web App，更是一个完整的 **Autonomous AI Agent** 系统。
+Mood diary不仅仅是一个 Web App，更是一个完整的 **Autonomous AI Agent** 系统。
 
 ### 🧠 感知与决策系统
 - **感知 (Perception)**：不仅接收用户文本，还感知当前时间、日期、时区 (`date-fns`) 和外部环境（如通过和风天气 API 获取实时天气）。
