@@ -141,9 +141,10 @@ async function getWeatherInfo(city: string): Promise<string> {
     const locationId = cityData.location[0].id;
     const cityName = cityData.location[0].name;
 
-    // 2. 获取天气预报 (每日预报)
+    // 2. 获取天气预报 (每日预报，最多 7 天)
     // 文档: https://dev.qweather.com/docs/api/weather/weather-daily-forecast/
-    const weatherUrl = `https://${qweatherHost}/v7/weather/3d?location=${locationId}`;
+    // 这里使用 7 天预报，后面代码会最多只取前 7 天
+    const weatherUrl = `https://${qweatherHost}/v7/weather/7d?location=${locationId}`;
     const weatherRes = await fetch(weatherUrl, fetchOptions);
 
     if (!weatherRes.ok) {
@@ -167,8 +168,32 @@ async function getWeatherInfo(city: string): Promise<string> {
     }
 
     if (weatherData.code === '200' && weatherData.daily && weatherData.daily.length > 0) {
-      const today = weatherData.daily[0];
-      return `【${cityName}今日天气】\n天气：${today.textDay} (白天) / ${today.textNight} (夜间)\n温度：${today.tempMin}℃ ~ ${today.tempMax}℃\n风向：${today.windDirDay}\n风力：${today.windScaleDay}级\n湿度：${today.humidity}%\n降水：${today.precip}mm\n更新时间：${new Date(weatherData.updateTime).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`;
+      // 使用每日天气预报 API，获取未来最多 7 天天气（含今天）
+      // 文档: https://dev.qweather.com/docs/api/weather/weather-daily-forecast/
+      const days = weatherData.daily.slice(0, 7); // 最多取 7 天
+
+      const lines: string[] = [];
+      lines.push(`【${cityName}未来七天天气预报】`);
+
+      for (const day of days) {
+        lines.push(
+          `\n日期：${day.fxDate}
+天气：${day.textDay} (白天) / ${day.textNight} (夜间)
+温度：${day.tempMin}℃ ~ ${day.tempMax}℃
+风向：${day.windDirDay}
+风力：${day.windScaleDay}级
+湿度：${day.humidity}%
+降水：${day.precip}mm`
+        );
+      }
+
+      lines.push(
+        `\n数据更新时间：${new Date(weatherData.updateTime).toLocaleString('zh-CN', {
+          timeZone: 'Asia/Shanghai',
+        })}`
+      );
+
+      return lines.join('\n');
     } else {
       return `抱歉，无法获取 ${cityName} 的天气信息 (Code: ${weatherData.code})。`;
     }
@@ -421,7 +446,7 @@ export async function POST(req: NextRequest) {
                 message: `Sticker [${category}] displayed. Please mention it in your response and append [STICKER:${category}] at the end.` 
               };
             } else if (fnName === 'get_weather') {
-              const city = (args as any).city || '北京'; // 默认城市
+              const city = (args as any).city || '河曲县'; // 默认城市
               try {
                 const weatherInfo = await getWeatherInfo(city);
                 const isSuccess = !weatherInfo.includes('抱歉') && !weatherInfo.includes('不可用') && !weatherInfo.includes('失败');
